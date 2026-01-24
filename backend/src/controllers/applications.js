@@ -1,7 +1,4 @@
-const Application = require('../models/Application');
-const Job = require('../models/Job');
-const Resume = require('../models/Resume');
-const User = require('../models/User');
+const { Application, Job, Resume, User } = require('../models');
 const emailNotificationService = require('../services/emailNotificationService');
 
 // @desc    Apply for a job
@@ -28,7 +25,7 @@ const applyForJob = async (req, res) => {
 
     // Check if job exists
     console.log('Looking for job with ID:', jobId);
-    const job = await Job.findById(jobId);
+    const job = await Job.findByPk(jobId);
     console.log('Job found:', job ? 'Yes' : 'No');
     
     if (!job) {
@@ -40,13 +37,15 @@ const applyForJob = async (req, res) => {
 
     // Check if already applied
     const existingApplication = await Application.findOne({
-      user: userId,
-      job: jobId
+      where: {
+        userId: userId,
+        jobId: jobId
+      }
     });
 
     if (existingApplication) {
       // Send email notification for existing application
-      const user = await User.findById(userId);
+      const user = await User.findByPk(userId);
       if (user) {
         emailNotificationService.sendJobApplicationEmail(user, job).catch(console.error);
       }
@@ -55,7 +54,7 @@ const applyForJob = async (req, res) => {
         status: 'success',
         message: 'Application already exists. Notifications sent.',
         data: {
-          id: existingApplication._id,
+          id: existingApplication.id,
           jobTitle: job.title,
           company: job.company,
           status: existingApplication.status,
@@ -66,29 +65,31 @@ const applyForJob = async (req, res) => {
 
     // Get user's latest resume (optional)
     const latestResume = await Resume.findOne({
-      user: userId,
-      isLatest: true
+      where: {
+        userId: userId,
+        isLatest: true
+      }
     });
     console.log('Latest resume found:', latestResume ? 'Yes' : 'No');
 
     // Create application
     const applicationData = {
-      user: userId,
-      job: jobId,
+      userId: userId,
+      jobId: jobId,
       coverLetter: coverLetter || '',
       status: 'pending'
     };
 
     if (latestResume) {
-      applicationData.resume = latestResume._id;
+      applicationData.resumeId = latestResume.id;
     }
 
     console.log('Creating application with data:', applicationData);
     const application = await Application.create(applicationData);
-    console.log('Application created:', application._id);
+    console.log('Application created:', application.id);
 
     // Send email notification in background
-    const user = await User.findById(userId);
+    const user = await User.findByPk(userId);
     if (user) {
       emailNotificationService.sendJobApplicationEmail(user, job).catch(console.error);
     }
@@ -97,7 +98,7 @@ const applyForJob = async (req, res) => {
       status: 'success',
       message: 'Application submitted successfully',
       data: {
-        id: application._id,
+        id: application.id,
         jobTitle: job.title,
         company: job.company,
         status: application.status,
@@ -119,10 +120,20 @@ const applyForJob = async (req, res) => {
 // @access  Private (Student only)
 const getUserApplications = async (req, res) => {
   try {
-    const applications = await Application.find({ user: req.user.id })
-      .populate('job')
-      .populate('resume')
-      .sort({ createdAt: -1 });
+    const applications = await Application.findAll({
+      where: { userId: req.user.id },
+      include: [
+        {
+          model: Job,
+          as: 'job'
+        },
+        {
+          model: Resume,
+          as: 'resume'
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
     res.status(200).json({
       status: 'success',
@@ -145,10 +156,21 @@ const getUserApplications = async (req, res) => {
 // @access  Private (Recruiter only)
 const getApplications = async (req, res) => {
   try {
-    const applications = await Application.find()
-      .populate('user', 'name email phone')
-      .populate('job', 'title company')
-      .sort({ createdAt: -1 });
+    const applications = await Application.findAll({
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email', 'phone']
+        },
+        {
+          model: Job,
+          as: 'job',
+          attributes: ['id', 'title', 'company']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
     res.status(200).json({
       status: 'success',
@@ -187,9 +209,18 @@ const updateApplication = async (req, res) => {
     }
 
     // Find and update application
-    const application = await Application.findById(id)
-      .populate('user')
-      .populate('job');
+    const application = await Application.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: 'user'
+        },
+        {
+          model: Job,
+          as: 'job'
+        }
+      ]
+    });
     
     if (!application) {
       return res.status(404).json({
@@ -214,7 +245,7 @@ const updateApplication = async (req, res) => {
       status: 'success',
       message: 'Application status updated successfully',
       data: {
-        id: application._id,
+        id: application.id,
         status: application.status,
         lastUpdated: application.lastUpdated
       }
@@ -237,16 +268,22 @@ const getMyApplications = async (req, res) => {
   try {
     console.log('Fetching applications for user:', req.user.id);
     
-    const applications = await Application.find({ user: req.user.id })
-      .populate({
-        path: 'job',
-        select: 'title company location type salaryMin salaryMax description skills'
-      })
-      .populate({
-        path: 'resume',
-        select: 'originalName'
-      })
-      .sort({ createdAt: -1 });
+    const applications = await Application.findAll({
+      where: { userId: req.user.id },
+      include: [
+        {
+          model: Job,
+          as: 'job',
+          attributes: ['id', 'title', 'company', 'location', 'type', 'salaryMin', 'salaryMax', 'description', 'skills']
+        },
+        {
+          model: Resume,
+          as: 'resume',
+          attributes: ['id', 'originalName']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
     console.log('Found applications:', applications.length);
     console.log('Sample application:', applications[0]);

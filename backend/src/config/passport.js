@@ -1,7 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const MicrosoftStrategy = require('passport-microsoft').Strategy;
-const User = require('../models/User');
+const { User } = require('../models');
 
 // Google OAuth Strategy - only initialize if credentials are provided
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && 
@@ -12,7 +12,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET &&
     callbackURL: "/api/auth/google/callback"
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      let user = await User.findOne({ email: profile.emails[0].value });
+      let user = await User.findOne({ where: { email: profile.emails[0].value } });
       
       if (user) {
         return done(null, user);
@@ -43,7 +43,7 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET &&
     scope: ['user.read']
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      let user = await User.findOne({ email: profile.emails[0].value });
+      let user = await User.findOne({ where: { email: profile.emails[0].value } });
       
       if (user) {
         return done(null, user);
@@ -70,7 +70,7 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await User.findById(id);
+    const user = await User.findByPk(id);
     done(null, user);
   } catch (error) {
     done(error, null);

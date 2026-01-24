@@ -1,16 +1,17 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
-const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const rateLimit = require('express-rate-limit');
 const passport = require('./config/passport');
-require('dotenv').config();
 
-const connectDB = require('./config/database');
+const { connectDB } = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
+// Initialize models and associations
+require('./models');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -27,11 +28,13 @@ const notificationRoutes = require('./routes/notifications');
 const app = express();
 
 // Connect to database
-connectDB();
+connectDB().catch((error) => {
+  console.error('❌ Failed to connect to database:', error.message);
+  process.exit(1);
+});
 
 // Security middleware
 app.use(helmet());
-app.use(mongoSanitize());
 app.use(hpp());
 
 // Rate limiting
@@ -82,7 +85,7 @@ app.options('*', cors());
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'success',
-    message: 'Aspiro API is running!',
+    message: 'PlacementHub API is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
   });

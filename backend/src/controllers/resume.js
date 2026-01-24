@@ -1,6 +1,7 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const { Op } = require('sequelize');
 const User = require('../models/User');
 const Resume = require('../models/Resume');
 
@@ -46,14 +47,15 @@ const analyzeResume = async (req, res) => {
     // Save resume and analysis to database BEFORE cleaning up file
     let savedResume = null;
     if (req.user) {
-      // Mark all previous resumes as not latest
-      await Resume.updateMany(
-        { user: req.user.id },
-        { isLatest: false }
+      // Mark all previous resumes as not latest (Sequelize)
+      await Resume.update(
+        { isLatest: false },
+        { where: { userId: req.user.id } }
       );
       
+      // Create new resume record (Sequelize)
       savedResume = await Resume.create({
-        user: req.user.id,
+        userId: req.user.id,
         filename: req.file.filename,
         originalName: req.file.originalname,
         filePath: req.file.path,
@@ -64,8 +66,8 @@ const analyzeResume = async (req, res) => {
         isActive: true
       });
       
-      // Update user profile with resume analysis
-      await User.findByIdAndUpdate(req.user.id, {
+      // Update user profile with resume analysis (Sequelize)
+      await User.update({
         resumeAnalysis: {
           score: response.data.similarity_score ? Math.round(response.data.similarity_score * 100) : 0,
           filename: req.file.originalname,
@@ -77,7 +79,7 @@ const analyzeResume = async (req, res) => {
           keywordSuggestions: response.data.missing_required_skills || [],
           extractedSkills: response.data.extracted_skills || []
         }
-      });
+      }, { where: { id: req.user.id } });
     }
     
     // Clean up uploaded file after saving to database
@@ -85,16 +87,11 @@ const analyzeResume = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
     
-    // Ensure resume is saved before responding
-    if (savedResume) {
-      await savedResume.save();
-    }
-    
     res.status(200).json({
       status: 'success',
       data: {
         ...response.data,
-        resumeId: savedResume?._id,
+        resumeId: savedResume?.id,
         uploadedAt: savedResume?.createdAt
       },
       message: 'Resume analysis completed successfully'
@@ -119,10 +116,13 @@ const analyzeResume = async (req, res) => {
 const getLatestResume = async (req, res) => {
   try {
     const latestResume = await Resume.findOne({
-      user: req.user.id,
-      isActive: true,
-      isLatest: true
-    }).sort({ createdAt: -1 });
+      where: {
+        userId: req.user.id,
+        isActive: true,
+        isLatest: true
+      },
+      order: [['createdAt', 'DESC']]
+    });
 
     if (!latestResume) {
       return res.status(404).json({
@@ -134,7 +134,7 @@ const getLatestResume = async (req, res) => {
     res.status(200).json({
       status: 'success',
       data: {
-        id: latestResume._id,
+        id: latestResume.id,
         filename: latestResume.originalName,
         uploadDate: latestResume.createdAt,
         analysis: latestResume.analysis
@@ -151,13 +151,17 @@ const getLatestResume = async (req, res) => {
 
 const getResumeHistory = async (req, res) => {
   try {
-    const resumes = await Resume.find({
-      user: req.user.id,
-      isActive: true
-    }).sort({ createdAt: -1 }).limit(10);
+    const resumes = await Resume.findAll({
+      where: {
+        userId: req.user.id,
+        isActive: true
+      },
+      order: [['createdAt', 'DESC']],
+      limit: 10
+    });
 
     const history = resumes.map(resume => ({
-      id: resume._id,
+      id: resume.id,
       filename: resume.originalName,
       uploadDate: resume.createdAt,
       score: resume.analysis?.similarity_score ? Math.round(resume.analysis.similarity_score * 100) : 0,
@@ -180,9 +184,11 @@ const getResumeHistory = async (req, res) => {
 
 const deleteResumeHistory = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user.id, {
-      $unset: { resumeAnalyses: 1 }
-    });
+    // Clear resumeAnalysis from user (Sequelize)
+    await User.update(
+      { resumeAnalysis: null },
+      { where: { id: req.user.id } }
+    );
     
     res.status(200).json({
       status: 'success',

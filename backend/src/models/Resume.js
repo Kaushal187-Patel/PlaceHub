@@ -1,100 +1,86 @@
-const mongoose = require('mongoose');
+const { DataTypes, Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const resumeSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Resume = sequelize.define('Resume', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'user_id'
   },
   filename: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   originalName: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   filePath: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   fileSize: {
-    type: Number,
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
   mimeType: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   extractedText: {
-    type: String
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   analysis: {
-    score: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    strengths: [{
-      type: String
-    }],
-    weaknesses: [{
-      type: String
-    }],
-    suggestions: [{
-      type: String
-    }],
-    keywordSuggestions: [{
-      type: String
-    }],
-    sections: {
-      contact: { score: Number, feedback: String },
-      summary: { score: Number, feedback: String },
-      experience: { score: Number, feedback: String },
-      education: { score: Number, feedback: String },
-      skills: { score: Number, feedback: String },
-      projects: { score: Number, feedback: String }
-    },
-    skillsFound: [{
-      type: String
-    }],
-    experienceYears: {
-      type: Number,
-      default: 0
-    },
-    educationLevel: {
-      type: String
-    },
-    lastAnalyzed: {
-      type: Date,
-      default: Date.now
-    }
+    type: DataTypes.JSONB,
+    allowNull: true,
+    defaultValue: {}
   },
   isActive: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'is_active'
   },
   isLatest: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_latest'
   }
 }, {
-  timestamps: true
-});
-
-// Index for efficient queries
-resumeSchema.index({ user: 1, isActive: 1 });
-resumeSchema.index({ user: 1, isLatest: 1 });
-
-// Ensure only one latest resume per user
-resumeSchema.pre('save', async function(next) {
-  if (this.isLatest) {
-    await this.constructor.updateMany(
-      { user: this.user, _id: { $ne: this._id } },
-      { isLatest: false }
-    );
+  tableName: 'resumes',
+  indexes: [
+    {
+      fields: ['user_id', 'is_active']
+    },
+    {
+      fields: ['user_id', 'is_latest']
+    }
+  ],
+  hooks: {
+    beforeSave: async (resume) => {
+      if (resume.isLatest) {
+        // Ensure only one latest resume per user
+        await Resume.update(
+          { isLatest: false },
+          {
+            where:             {
+              userId: resume.userId,
+              id: { [Op.ne]: resume.id }
+            }
+          }
+        );
+      }
+    }
   }
-  next();
 });
 
-module.exports = mongoose.model('Resume', resumeSchema);
+module.exports = Resume;

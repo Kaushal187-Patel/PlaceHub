@@ -6,7 +6,7 @@ const About = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-extrabold text-gray-900 dark:text-white mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-            About Aspiro
+            About PlacementHub
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
             Empowering careers through AI-powered recommendations and intelligent job matching
@@ -17,14 +17,14 @@ const About = () => {
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Our Mission</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              At Aspiro, we believe everyone deserves a fulfilling career. Our AI-powered platform bridges the gap between talent and opportunity, providing personalized career recommendations and intelligent job matching.
+              At PlacementHub, we believe everyone deserves a fulfilling career. Our AI-powered platform bridges the gap between talent and opportunity, providing personalized career recommendations and intelligent job matching.
             </p>
             <p className="text-gray-600 dark:text-gray-300">
               We leverage cutting-edge machine learning algorithms to analyze your skills, experience, and career goals, delivering insights that help you make informed decisions about your professional future.
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Why Choose Aspiro?</h3>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Why Choose PlacementHub?</h3>
             <ul className="space-y-3">
               <li className="flex items-center text-gray-600 dark:text-gray-300">
                 <FiTarget className="h-5 w-5 text-blue-600 mr-3" />

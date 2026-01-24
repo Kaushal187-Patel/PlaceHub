@@ -1,8 +1,5 @@
-const User = require('../models/User');
-const Job = require('../models/Job');
-const SavedJob = require('../models/SavedJob');
-const Application = require('../models/Application');
-const Resume = require('../models/Resume');
+const { User, Job, SavedJob, Application, Resume } = require('../models');
+const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
 
 // @desc    Get all users
@@ -11,30 +8,32 @@ const { validationResult } = require('express-validator');
 const getUsers = async (req, res) => {
   try {
     const { page = 1, limit = 10, role, search } = req.query;
-    const query = {};
+    const where = {};
     
-    if (role) query.role = role;
+    if (role) where.role = role;
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } }
       ];
     }
     
-    const users = await User.find(query)
-      .select('-password')
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .sort({ createdAt: -1 });
+    const offset = (parseInt(page) - 1) * parseInt(limit);
     
-    const total = await User.countDocuments(query);
+    const { count, rows: users } = await User.findAndCountAll({
+      where,
+      attributes: { exclude: ['password'] },
+      limit: parseInt(limit),
+      offset,
+      order: [['createdAt', 'DESC']]
+    });
     
     res.status(200).json({
       status: 'success',
       count: users.length,
-      total,
+      total: count,
       page: parseInt(page),
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(count / limit),
       data: users
     });
   } catch (error) {
@@ -53,7 +52,9 @@ const getUser = async (req, res) => {
   try {
     const userId = req.params.id === 'me' ? req.user.id : req.params.id;
     
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findByPk(userId, {
+      attributes: { exclude: ['password'] }
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -74,15 +75,16 @@ const getUser = async (req, res) => {
     let latestResume = null;
     if (userId === req.user.id) {
       latestResume = await Resume.findOne({
-        user: userId,
-        isActive: true,
-        isLatest: true
-      }).select('analysis createdAt originalName');
-      
-
+        where: {
+          userId: userId,
+          isActive: true,
+          isLatest: true
+        },
+        attributes: ['id', 'analysis', 'createdAt', 'originalName']
+      });
     }
     
-    const userData = user.toObject();
+    const userData = user.toJSON();
     
     // Include traditional resume analysis if available
     if (latestResume && latestResume.analysis) {
@@ -149,11 +151,16 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    await user.update(updateData);
+    await user.reload({ attributes: { exclude: ['password'] } });
 
     res.status(200).json({
       status: 'success',
@@ -182,7 +189,7 @@ const uploadResume = async (req, res) => {
     }
 
     const resume = await Resume.create({
-      user: req.user.id,
+      userId: req.user.id,
       filename: req.file.filename,
       originalName: req.file.originalname,
       filePath: req.file.path,
@@ -195,7 +202,7 @@ const uploadResume = async (req, res) => {
       status: 'success',
       message: 'Resume uploaded successfully',
       data: {
-        id: resume._id,
+        id: resume.id,
         filename: resume.originalName,
         uploadedAt: resume.createdAt
       }
@@ -224,9 +231,14 @@ const analyzeResume = (req, res) => {
 // @access  Private
 const getSavedJobs = async (req, res) => {
   try {
-    const savedJobs = await SavedJob.find({ user: req.user.id })
-      .populate('job')
-      .sort({ createdAt: -1 });
+    const savedJobs = await SavedJob.findAll({
+      where: { userId: req.user.id },
+      include: [{
+        model: Job,
+        as: 'job'
+      }],
+      order: [['createdAt', 'DESC']]
+    });
 
     res.status(200).json({
       status: 'success',
@@ -247,7 +259,7 @@ const getSavedJobs = async (req, res) => {
 // @access  Private
 const saveJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.jobId);
+    const job = await Job.findByPk(req.params.jobId);
     if (!job) {
       return res.status(404).json({
         status: 'error',
@@ -256,8 +268,10 @@ const saveJob = async (req, res) => {
     }
 
     const existingSave = await SavedJob.findOne({
-      user: req.user.id,
-      job: req.params.jobId
+      where: {
+        userId: req.user.id,
+        jobId: req.params.jobId
+      }
     });
 
     if (existingSave) {
@@ -268,8 +282,8 @@ const saveJob = async (req, res) => {
     }
 
     await SavedJob.create({
-      user: req.user.id,
-      job: req.params.jobId
+      userId: req.user.id,
+      jobId: req.params.jobId
     });
 
     res.status(201).json({
@@ -290,9 +304,11 @@ const saveJob = async (req, res) => {
 // @access  Private
 const unsaveJob = async (req, res) => {
   try {
-    const savedJob = await SavedJob.findOneAndDelete({
-      user: req.user.id,
-      job: req.params.jobId
+    const savedJob = await SavedJob.findOne({
+      where: {
+        userId: req.user.id,
+        jobId: req.params.jobId
+      }
     });
 
     if (!savedJob) {
@@ -301,6 +317,8 @@ const unsaveJob = async (req, res) => {
         message: 'Saved job not found'
       });
     }
+
+    await savedJob.destroy();
 
     res.status(200).json({
       status: 'success',
@@ -320,10 +338,20 @@ const unsaveJob = async (req, res) => {
 // @access  Private
 const getAppliedJobs = async (req, res) => {
   try {
-    const applications = await Application.find({ user: req.user.id })
-      .populate('job')
-      .populate('resume')
-      .sort({ createdAt: -1 });
+    const applications = await Application.findAll({
+      where: { userId: req.user.id },
+      include: [
+        {
+          model: Job,
+          as: 'job'
+        },
+        {
+          model: Resume,
+          as: 'resume'
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
     res.status(200).json({
       status: 'success',
@@ -344,11 +372,7 @@ const getAppliedJobs = async (req, res) => {
 // @access  Private/Admin
 const updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select('-password');
+    const user = await User.findByPk(req.params.id);
     
     if (!user) {
       return res.status(404).json({
@@ -356,6 +380,9 @@ const updateUser = async (req, res) => {
         message: 'User not found'
       });
     }
+    
+    await user.update(req.body);
+    await user.reload({ attributes: { exclude: ['password'] } });
     
     res.status(200).json({
       status: 'success',
@@ -376,7 +403,7 @@ const updateUser = async (req, res) => {
 // @access  Private/Admin
 const deleteUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByPk(req.params.id);
     
     if (!user) {
       return res.status(404).json({
@@ -387,12 +414,12 @@ const deleteUser = async (req, res) => {
     
     // Delete related data
     await Promise.all([
-      SavedJob.deleteMany({ user: req.params.id }),
-      Application.deleteMany({ user: req.params.id }),
-      Resume.deleteMany({ user: req.params.id })
+      SavedJob.destroy({ where: { userId: req.params.id } }),
+      Application.destroy({ where: { userId: req.params.id } }),
+      Resume.destroy({ where: { userId: req.params.id } })
     ]);
     
-    await user.deleteOne();
+    await user.destroy();
     
     res.status(200).json({
       status: 'success',

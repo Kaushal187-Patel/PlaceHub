@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
-const User = require('../models/User');
+const { Op } = require('sequelize');
+const { User } = require('../models');
 const sendEmail = require('../utils/sendEmail');
 
 // @desc      Register user
@@ -20,7 +21,7 @@ const register = async (req, res, next) => {
     const { name, email, password, role } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         status: 'error',
@@ -71,7 +72,10 @@ const login = async (req, res, next) => {
     }
 
     // Find user and include password field
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ 
+      where: { email },
+      attributes: { include: ['password'] }
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -133,7 +137,9 @@ const logout = (req, res) => {
 // @access    Private
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
 
     res.status(200).json({
       status: 'success',
@@ -170,10 +176,16 @@ const updateDetails = async (req, res, next) => {
       fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
     );
 
-    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
-      new: true,
-      runValidators: true
-    });
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    await user.update(fieldsToUpdate);
+    await user.reload({ attributes: { exclude: ['password'] } });
 
     res.status(200).json({
       status: 'success',
@@ -201,7 +213,16 @@ const updatePassword = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.user.id).select('+password');
+    const user = await User.findByPk(req.user.id, {
+      attributes: { include: ['password'] }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
 
     // Check current password
     if (!(await user.matchPassword(req.body.currentPassword))) {
@@ -234,7 +255,7 @@ const forgotPassword = async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ where: { email: req.body.email } });
 
     if (!user) {
       return res.status(404).json({
@@ -246,7 +267,7 @@ const forgotPassword = async (req, res, next) => {
     // Get reset token
     const resetToken = user.getResetPasswordToken();
 
-    await user.save({ validateBeforeSave: false });
+    await user.save();
 
     // Create reset url
     const resetUrl = `${req.protocol}://${req.get('host')}/api/auth/resetpassword/${resetToken}`;
@@ -264,7 +285,7 @@ const forgotPassword = async (req, res, next) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: 'Aspiro - Password Reset Token',
+        subject: 'PlacementHub - Password Reset Token',
         message
       });
 
@@ -274,10 +295,10 @@ const forgotPassword = async (req, res, next) => {
       });
     } catch (err) {
       console.error('Email sending error:', err);
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
+      user.resetPasswordToken = null;
+      user.resetPasswordExpire = null;
 
-      await user.save({ validateBeforeSave: false });
+      await user.save();
 
       return res.status(500).json({
         status: 'error',
@@ -310,8 +331,10 @@ const resetPassword = async (req, res, next) => {
       .digest('hex');
 
     const user = await User.findOne({
-      resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }
+      where: {
+        resetPasswordToken,
+        resetPasswordExpire: { [Op.gt]: new Date() }
+      }
     });
 
     if (!user) {
@@ -323,8 +346,8 @@ const resetPassword = async (req, res, next) => {
 
     // Set new password
     user.password = req.body.password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
     await user.save();
 
     sendTokenResponse(user, 200, res, 'Password reset successful');
@@ -355,7 +378,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
     data: {
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,

@@ -1,25 +1,42 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const savedJobSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const SavedJob = sequelize.define('SavedJob', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  job: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Job',
-    required: true
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'user_id'
+  },
+  jobId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'jobs',
+      key: 'id'
+    },
+    field: 'job_id'
   },
   savedAt: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
 }, {
-  timestamps: true
+  tableName: 'saved_jobs',
+  indexes: [
+    {
+      unique: true,
+      fields: ['user_id', 'job_id']
+    }
+  ]
 });
 
-// Ensure unique user-job combinations
-savedJobSchema.index({ user: 1, job: 1 }, { unique: true });
-
-module.exports = mongoose.model('SavedJob', savedJobSchema);
+module.exports = SavedJob;

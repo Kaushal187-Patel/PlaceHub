@@ -1,41 +1,68 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const applicationSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Application = sequelize.define('Application', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  job: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Job',
-    required: true
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'user_id'
+  },
+  jobId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'jobs',
+      key: 'id'
+    },
+    field: 'job_id'
   },
   status: {
-    type: String,
-    enum: ['pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'hired'],
-    default: 'pending'
+    type: DataTypes.ENUM('pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'hired'),
+    defaultValue: 'pending'
   },
   coverLetter: {
-    type: String
+    type: DataTypes.TEXT,
+    allowNull: true
   },
-  resume: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Resume'
+  resumeId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'resumes',
+      key: 'id'
+    },
+    field: 'resume_id'
   },
   appliedAt: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   },
   lastUpdated: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
 }, {
-  timestamps: true
+  tableName: 'applications',
+  indexes: [
+    {
+      unique: true,
+      fields: ['user_id', 'job_id']
+    }
+  ],
+  hooks: {
+    beforeUpdate: (application) => {
+      application.lastUpdated = new Date();
+    }
+  }
 });
 
-// Ensure unique user-job applications
-applicationSchema.index({ user: 1, job: 1 }, { unique: true });
-
-module.exports = mongoose.model('Application', applicationSchema);
+module.exports = Application;

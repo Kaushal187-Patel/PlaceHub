@@ -1,5 +1,5 @@
-const Job = require('../models/Job');
-const User = require('../models/User');
+const { Job, User } = require('../models');
+const { Op } = require('sequelize');
 const emailNotificationService = require('./emailNotificationService');
 
 class JobExpiryService {
@@ -9,12 +9,18 @@ class JobExpiryService {
       const threeDaysFromNow = new Date();
       threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
       
-      const expiringJobs = await Job.find({
-        applicationDeadline: { $lte: threeDaysFromNow },
-        status: 'active',
-        extensionRequested: false,
-        isExpired: false
-      }).populate('recruiter');
+      const expiringJobs = await Job.findAll({
+        where: {
+          applicationDeadline: { [Op.lte]: threeDaysFromNow },
+          status: 'active',
+          extensionRequested: false,
+          isExpired: false
+        },
+        include: [{
+          model: User,
+          as: 'recruiter'
+        }]
+      });
 
       for (const job of expiringJobs) {
         await this.sendExtensionEmail(job);
@@ -34,21 +40,21 @@ class JobExpiryService {
   async markExpiredJobs() {
     try {
       const now = new Date();
-      const result = await Job.updateMany(
+      const [affectedRows] = await Job.update(
         {
-          applicationDeadline: { $lt: now },
-          status: 'active',
-          isExpired: false
+          isExpired: true,
+          status: 'closed'
         },
         {
-          $set: { 
-            isExpired: true,
-            status: 'closed'
+          where: {
+            applicationDeadline: { [Op.lt]: now },
+            status: 'active',
+            isExpired: false
           }
         }
       );
 
-      return result.modifiedCount;
+      return affectedRows;
     } catch (error) {
       console.error('Error marking expired jobs:', error);
       return 0;
@@ -62,7 +68,7 @@ class JobExpiryService {
       const daysLeft = Math.ceil((job.applicationDeadline - new Date()) / (1000 * 60 * 60 * 24));
       
       const mailOptions = {
-        from: `"Aspiro Career Platform" <${process.env.EMAIL_USER}>`,
+        from: `"PlacementHub Career Platform" <${process.env.EMAIL_USER}>`,
         to: recruiter.email,
         subject: `Job Application Deadline Reminder - ${job.title}`,
         html: `
@@ -90,11 +96,11 @@ class JobExpiryService {
               </p>
               
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.FRONTEND_URL}/recruiter-dashboard?extend=${job._id}" 
+                <a href="${process.env.FRONTEND_URL}/recruiter-dashboard?extend=${job.id}" 
                    style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-right: 10px;">
                   Extend Deadline
                 </a>
-                <a href="${process.env.FRONTEND_URL}/recruiter-dashboard?close=${job._id}" 
+                <a href="${process.env.FRONTEND_URL}/recruiter-dashboard?close=${job.id}" 
                    style="background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                   Close Job
                 </a>
@@ -102,7 +108,7 @@ class JobExpiryService {
               
               <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                This is an automated reminder from Aspiro Career Platform.<br>
+                This is an automated reminder from PlacementHub Career Platform.<br>
                 Please do not reply to this email.
               </p>
             </div>
@@ -120,11 +126,13 @@ class JobExpiryService {
   // Get jobs requiring extension decision
   async getJobsRequiringExtension(recruiterId) {
     try {
-      const jobs = await Job.find({
-        recruiter: recruiterId,
-        extensionRequested: true,
-        isExpired: false,
-        status: 'active'
+      const jobs = await Job.findAll({
+        where: {
+          recruiterId: recruiterId,
+          extensionRequested: true,
+          isExpired: false,
+          status: 'active'
+        }
       });
 
       return jobs;

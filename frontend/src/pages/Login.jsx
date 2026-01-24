@@ -81,11 +81,11 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-brand-100 to-brand-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl">
-            <span className="text-2xl font-bold text-white">A</span>
+          <div className="mx-auto h-16 w-16 bg-brand-300 rounded-2xl flex items-center justify-center mb-6 shadow-xl">
+            <span className="text-2xl font-bold text-gray-900">P</span>
           </div>
           <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">
             Welcome Back
@@ -97,13 +97,13 @@ const Login = () => {
             Don't have an account?{' '}
             <Link
               to="/register"
-              className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 hover:underline transition-colors"
+              className="font-semibold text-gray-900 hover:text-gray-700 dark:text-brand-200 hover:underline transition-colors"
             >
               Create one now
             </Link>
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-2xl rounded-2xl border border-gray-100 dark:border-gray-700">
+        <div className="bg-brand-100 dark:bg-gray-800 py-8 px-6 shadow-2xl rounded-2xl border border-brand-200 dark:border-gray-700">
         <form className="space-y-6" onSubmit={onSubmit}>
           <div className="space-y-4">
             <div>
@@ -120,7 +120,7 @@ const Login = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  className="appearance-none relative block w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-5 sm:text-sm bg-white dark:bg-gray-700 transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-500"
+                  className="appearance-none relative block w-full px-4 py-3 pl-12 border border-brand-200 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 focus:z-5 sm:text-sm bg-brand-50 dark:bg-gray-700 transition-all duration-200 hover:border-brand-300 dark:hover:border-brand-300"
                   placeholder="Email address"
                   value={email}
                   onChange={onChange}
@@ -141,7 +141,7 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="appearance-none relative block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-5 sm:text-sm bg-white dark:bg-gray-800"
+                  className="appearance-none relative block w-full px-3 py-2 pl-10 pr-10 border border-brand-200 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-brand-300 focus:border-brand-300 focus:z-5 sm:text-sm bg-brand-50 dark:bg-gray-800"
                   placeholder="Password"
                   value={password}
                   onChange={onChange}
@@ -167,7 +167,7 @@ const Login = () => {
             <div className="text-sm">
               <Link
                 to="/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                className="font-medium text-gray-900 hover:text-gray-700 dark:text-brand-200"
               >
                 Forgot your password?
               </Link>
@@ -178,7 +178,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-gray-900 bg-brand-300 hover:bg-brand-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-300 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -195,10 +195,10 @@ const Login = () => {
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+              <div className="w-full border-t border-brand-200 dark:border-gray-600" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
+              <span className="px-2 bg-brand-100 dark:bg-gray-800 text-gray-500">Or continue with</span>
             </div>
           </div>
           

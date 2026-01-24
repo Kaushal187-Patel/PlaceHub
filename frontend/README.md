@@ -1,6 +1,6 @@
-# Aspiro Frontend
+# PlacementHub Frontend
 
-React.js frontend application for the Aspiro AI-powered career recommendation platform.
+React.js frontend application for the PlacementHub AI-powered career recommendation platform.
 
 ## 🚀 Features
 

@@ -1,5 +1,5 @@
 {
-  "name": "aspiro-app",
+  "name": "placementhub-app",
   "version": "1.0.0",
   "description": "AI-Powered Career Recommendation Platform",
   "scripts": {
@@ -24,6 +24,6 @@
     "axios": "^1.6.2"
   },
   "keywords": ["career", "ai", "jobs", "recommendation"],
-  "author": "Aspiro Team",
+  "author": "PlacementHub Team",
   "license": "MIT"
 }

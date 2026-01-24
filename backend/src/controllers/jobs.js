@@ -1,4 +1,5 @@
-const Job = require('../models/Job');
+const { Job, Application } = require('../models');
+const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
 const jobExpiryService = require('../services/jobExpiryService');
 
@@ -35,8 +36,8 @@ const createJob = async (req, res) => {
       description,
       location,
       type,
-      salaryMin: salaryMin ? parseInt(salaryMin) : undefined,
-      salaryMax: salaryMax ? parseInt(salaryMax) : undefined,
+      salaryMin: salaryMin ? parseFloat(salaryMin) : undefined,
+      salaryMax: salaryMax ? parseFloat(salaryMax) : undefined,
       experience,
       skills: Array.isArray(skills) ? skills : skills?.split(',').map(s => s.trim()).filter(s => s),
       requirements,
@@ -44,7 +45,7 @@ const createJob = async (req, res) => {
       visibility,
       status: 'active',
       applicationDeadline: req.body.applicationDeadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      recruiter: req.user.id,
+      recruiterId: req.user.id,
       company: req.user.company || req.user.name
     });
 
@@ -68,9 +69,14 @@ const createJob = async (req, res) => {
 // @access  Private (Recruiter only)
 const getMyJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ recruiter: req.user.id })
-      .populate('applications')
-      .sort({ createdAt: -1 });
+    const jobs = await Job.findAll({
+      where: { recruiterId: req.user.id },
+      include: [{
+        model: Application,
+        as: 'applications'
+      }],
+      order: [['createdAt', 'DESC']]
+    });
 
     // Group jobs by status for better organization
     const jobsByStatus = {
@@ -109,32 +115,37 @@ const getAllJobs = async (req, res) => {
   try {
     const { page = 1, limit = 10, location, type, experience, skills } = req.query;
     
-    const query = { 
+    const where = { 
       status: 'active', 
       visibility: 'public',
       isExpired: false,
-      applicationDeadline: { $gt: new Date() }
+      applicationDeadline: { [Op.gt]: new Date() }
     };
     
-    if (location) query.location = { $regex: location, $options: 'i' };
-    if (type) query.type = type;
-    if (experience) query.experience = experience;
-    if (skills) query.skills = { $in: skills.split(',').map(s => s.trim()) };
+    if (location) where.location = { [Op.iLike]: `%${location}%` };
+    if (type) where.type = type;
+    if (experience) where.experience = experience;
+    if (skills) {
+      // PostgreSQL array overlap operator
+      const skillArray = skills.split(',').map(s => s.trim());
+      where.skills = { [Op.overlap]: skillArray };
+    }
 
-    const jobs = await Job.find(query)
-      .select('-applications')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    const total = await Job.countDocuments(query);
+    const { count, rows: jobs } = await Job.findAndCountAll({
+      where,
+      limit: parseInt(limit),
+      offset,
+      order: [['createdAt', 'DESC']]
+    });
 
     res.status(200).json({
       status: 'success',
       count: jobs.length,
-      total,
+      total: count,
       page: parseInt(page),
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(count / limit),
       data: jobs
     });
   } catch (error) {
@@ -152,7 +163,7 @@ const getAllJobs = async (req, res) => {
 // @access  Private (Recruiter only)
 const updateJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -161,23 +172,20 @@ const updateJob = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to update this job'
       });
     }
 
-    const updatedJob = await Job.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    await job.update(req.body);
+    await job.reload();
 
     res.status(200).json({
       status: 'success',
       message: 'Job updated successfully',
-      data: updatedJob
+      data: job
     });
   } catch (error) {
     console.error('Update job error:', error);
@@ -194,7 +202,7 @@ const updateJob = async (req, res) => {
 // @access  Private (Recruiter only)
 const closeJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -203,7 +211,7 @@ const closeJob = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to close this job'
@@ -233,7 +241,7 @@ const closeJob = async (req, res) => {
 // @access  Private (Recruiter only)
 const toggleJobStatus = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -242,7 +250,7 @@ const toggleJobStatus = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to modify this job'
@@ -272,7 +280,7 @@ const toggleJobStatus = async (req, res) => {
 // @access  Private (Recruiter only)
 const deleteJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -281,14 +289,14 @@ const deleteJob = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to delete this job'
       });
     }
 
-    await Job.findByIdAndDelete(req.params.id);
+    await job.destroy();
 
     res.status(200).json({
       status: 'success',
@@ -319,7 +327,7 @@ const updateJobStatus = async (req, res) => {
       });
     }
 
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -328,7 +336,7 @@ const updateJobStatus = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to update this job'
@@ -367,7 +375,7 @@ const extendJobDeadline = async (req, res) => {
       });
     }
 
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -376,7 +384,7 @@ const extendJobDeadline = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to extend this job'
@@ -409,7 +417,7 @@ const extendJobDeadline = async (req, res) => {
 // @access  Private (Recruiter only)
 const rejectExtension = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findByPk(req.params.id);
 
     if (!job) {
       return res.status(404).json({
@@ -418,7 +426,7 @@ const rejectExtension = async (req, res) => {
       });
     }
 
-    if (job.recruiter.toString() !== req.user.id) {
+    if (job.recruiterId !== req.user.id) {
       return res.status(403).json({
         status: 'error',
         message: 'Not authorized to modify this job'

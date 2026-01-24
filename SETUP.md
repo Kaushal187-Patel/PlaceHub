@@ -1,6 +1,6 @@
-# Aspiro Project Setup Guide
+# PlacementHub Project Setup Guide
 
-Complete setup guide for the Aspiro AI-Powered Career Recommendation Platform.
+Complete setup guide for the PlacementHub AI-Powered Career Recommendation Platform.
 
 ## 🚀 Quick Start
 

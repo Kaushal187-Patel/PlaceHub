@@ -1,47 +1,60 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const notificationSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Notification = sequelize.define('Notification', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  application: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Application',
-    required: true
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'user_id'
+  },
+  applicationId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'applications',
+      key: 'id'
+    },
+    field: 'application_id'
   },
   type: {
-    type: String,
-    enum: ['sms', 'whatsapp', 'email'],
-    required: true
+    type: DataTypes.ENUM('sms', 'whatsapp', 'email'),
+    allowNull: false
   },
   status: {
-    type: String,
-    enum: ['pending', 'sent', 'failed'],
-    default: 'pending'
+    type: DataTypes.ENUM('pending', 'sent', 'failed'),
+    defaultValue: 'pending'
   },
   message: {
-    type: String,
-    required: true
+    type: DataTypes.TEXT,
+    allowNull: false
   },
   recipient: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   applicationStatus: {
-    type: String,
-    enum: ['pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'hired'],
-    required: true
+    type: DataTypes.ENUM('pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'hired'),
+    allowNull: false
   },
   sentAt: {
-    type: Date
+    type: DataTypes.DATE,
+    allowNull: true
   },
   error: {
-    type: String
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
-  timestamps: true
+  tableName: 'notifications'
 });
 
-module.exports = mongoose.model('Notification', notificationSchema);
+module.exports = Notification;

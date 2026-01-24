@@ -65,11 +65,11 @@ class NotificationService {
         subject: subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Aspiro - Application Status Update</h2>
+            <h2 style="color: #333;">PlacementHub - Application Status Update</h2>
             <p>${message}</p>
             <hr>
             <p style="color: #666; font-size: 12px;">
-              This is an automated message from Aspiro Career Platform.
+              This is an automated message from PlacementHub Career Platform.
             </p>
           </div>
         `

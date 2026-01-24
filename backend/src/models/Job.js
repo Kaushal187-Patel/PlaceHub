@@ -1,103 +1,135 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const jobSchema = new mongoose.Schema({
+const Job = sequelize.define('Job', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
   title: {
-    type: String,
-    required: [true, 'Job title is required'],
-    trim: true,
-    maxlength: [100, 'Job title cannot exceed 100 characters']
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Job title is required' },
+      len: { args: [1, 100], msg: 'Job title cannot exceed 100 characters' }
+    }
   },
   description: {
-    type: String,
-    required: [true, 'Job description is required'],
-    maxlength: [5000, 'Job description cannot exceed 5000 characters']
+    type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Job description is required' },
+      len: { args: [1, 5000], msg: 'Job description cannot exceed 5000 characters' }
+    }
   },
   location: {
-    type: String,
-    required: [true, 'Job location is required'],
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Job location is required' }
+    }
   },
   type: {
-    type: String,
-    required: true,
-    enum: ['Full-time', 'Part-time', 'Contract', 'Internship'],
-    default: 'Full-time'
+    type: DataTypes.ENUM('Full-time', 'Part-time', 'Contract', 'Internship'),
+    defaultValue: 'Full-time',
+    allowNull: false
   },
   salaryMin: {
-    type: Number,
-    min: [0, 'Minimum salary cannot be negative']
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    validate: {
+      min: { args: [0], msg: 'Minimum salary cannot be negative' }
+    }
   },
   salaryMax: {
-    type: Number,
-    min: [0, 'Maximum salary cannot be negative']
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    validate: {
+      min: { args: [0], msg: 'Maximum salary cannot be negative' }
+    }
   },
   experience: {
-    type: String,
-    required: true,
-    enum: ['Entry Level', 'Mid Level', 'Senior Level', 'Executive'],
-    default: 'Entry Level'
+    type: DataTypes.ENUM('Entry Level', 'Mid Level', 'Senior Level', 'Executive'),
+    defaultValue: 'Entry Level',
+    allowNull: false
   },
-  skills: [{
-    type: String,
-    trim: true
-  }],
+  skills: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
   requirements: {
-    type: String,
-    maxlength: [3000, 'Requirements cannot exceed 3000 characters']
+    type: DataTypes.TEXT,
+    allowNull: true,
+    validate: {
+      len: { args: [0, 3000], msg: 'Requirements cannot exceed 3000 characters' }
+    }
   },
   benefits: {
-    type: String,
-    maxlength: [2000, 'Benefits cannot exceed 2000 characters']
+    type: DataTypes.TEXT,
+    allowNull: true,
+    validate: {
+      len: { args: [0, 2000], msg: 'Benefits cannot exceed 2000 characters' }
+    }
   },
   visibility: {
-    type: String,
-    enum: ['public', 'private'],
-    default: 'public'
+    type: DataTypes.ENUM('public', 'private'),
+    defaultValue: 'public'
   },
   status: {
-    type: String,
-    enum: ['active', 'paused', 'closed', 'draft'],
-    default: 'active'
+    type: DataTypes.ENUM('active', 'paused', 'closed', 'draft'),
+    defaultValue: 'active'
   },
-  recruiter: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  recruiterId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'recruiter_id'
   },
   company: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  applications: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Application'
-  }],
   views: {
-    type: Number,
-    default: 0
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   },
   applicationDeadline: {
-    type: Date,
-    required: true,
-    default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
   },
   isExpired: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   extensionRequested: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   extensionRequestedAt: {
-    type: Date
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
-  timestamps: true
+  tableName: 'jobs',
+  indexes: [
+    {
+      fields: ['location', 'type', 'status']
+    },
+    {
+      fields: ['title'],
+      using: 'gin',
+      operator: 'gin_trgm_ops' // For full-text search (requires pg_trgm extension)
+    },
+    {
+      fields: ['skills'],
+      using: 'gin' // GIN index for array searches
+    }
+  ]
 });
 
-// Index for search functionality
-jobSchema.index({ title: 'text', description: 'text', skills: 'text' });
-jobSchema.index({ location: 1, type: 1, status: 1 });
-
-module.exports = mongoose.model('Job', jobSchema);
+module.exports = Job;

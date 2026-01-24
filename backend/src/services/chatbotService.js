@@ -243,7 +243,7 @@ What roles are you looking to strengthen in your organization?`;
 
   handlePlatformNavigation(message, userRole) {
     if (userRole === 'student') {
-      return `Here's how to navigate Aspiro effectively:
+      return `Here's how to navigate PlacementHub effectively:
 
 🏠 **Dashboard**: View your career recommendations and progress
 📊 **Career Recommendations**: Get AI-powered career suggestions
@@ -316,7 +316,7 @@ What specific question do you have?`;
 
   async getUserProfile(userId) {
     try {
-      const user = await User.findById(userId);
+      const user = await User.findByPk(userId);
       return user;
     } catch (error) {
       console.error('Error fetching user profile:', error);

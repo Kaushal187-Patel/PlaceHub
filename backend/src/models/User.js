@@ -1,145 +1,143 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { sequelize } = require('../config/database');
 
-const UserSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
   name: {
-    type: String,
-    required: [true, 'Please add a name'],
-    trim: true,
-    maxlength: [50, 'Name cannot be more than 50 characters']
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Please add a name' },
+      len: { args: [1, 50], msg: 'Name cannot be more than 50 characters' }
+    }
   },
   email: {
-    type: String,
-    required: [true, 'Please add an email'],
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true,
-    lowercase: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Please add a valid email'
-    ]
+    validate: {
+      isEmail: { msg: 'Please add a valid email' },
+      notEmpty: { msg: 'Please add an email' }
+    }
   },
   password: {
-    type: String,
-    required: [true, 'Please add a password'],
-    minlength: 6,
-    select: false
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: { args: [6], msg: 'Password must be at least 6 characters' },
+      notEmpty: { msg: 'Please add a password' }
+    }
   },
   role: {
-    type: String,
-    enum: ['student', 'recruiter', 'admin'],
-    default: 'student'
+    type: DataTypes.ENUM('student', 'recruiter', 'admin'),
+    defaultValue: 'student'
   },
   phone: {
-    type: String,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: true
   },
   whatsappNumber: {
-    type: String,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: true
   },
   location: {
-    type: String,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: true
   },
   bio: {
-    type: String,
-    trim: true,
-    maxlength: [500, 'Bio cannot be more than 500 characters']
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    validate: {
+      len: { args: [0, 500], msg: 'Bio cannot be more than 500 characters' }
+    }
   },
   website: {
-    type: String,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: true
   },
   linkedin: {
-    type: String,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: true
   },
   github: {
-    type: String,
-    trim: true
+    type: DataTypes.STRING,
+    allowNull: true
   },
-  skills: [{
-    type: String,
-    trim: true
-  }],
-  experience: [{
-    company: String,
-    position: String,
-    startDate: Date,
-    endDate: Date,
-    current: { type: Boolean, default: false },
-    description: String
-  }],
-  education: [{
-    institution: String,
-    degree: String,
-    field: String,
-    startDate: Date,
-    endDate: Date,
-    current: { type: Boolean, default: false }
-  }],
+  skills: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  experience: {
+    type: DataTypes.JSONB,
+    defaultValue: []
+  },
+  education: {
+    type: DataTypes.JSONB,
+    defaultValue: []
+  },
   resumeAnalysis: {
-    score: Number,
-    filename: String,
-    uploadDate: Date,
-    analysis: Object,
-    strengths: [String],
-    weaknesses: [String],
-    suggestions: [String],
-    keywordSuggestions: [String],
-    extractedSkills: [String]
+    type: DataTypes.JSONB,
+    allowNull: true
   },
   uploadcareResume: {
-    uuid: String,
-    filename: String,
-    url: String,
-    cdnUrl: String,
-    size: Number,
-    mimeType: String,
-    uploadedAt: Date
+    type: DataTypes.JSONB,
+    allowNull: true
   },
   isEmailVerified: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   isActive: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  emailVerificationToken: String,
-  emailVerificationExpire: Date
+  resetPasswordToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  resetPasswordExpire: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  emailVerificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  emailVerificationExpire: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
 }, {
-  timestamps: true
-});
-
-// Encrypt password using bcrypt
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+  tableName: 'users',
+  hooks: {
+    beforeSave: async (user) => {
+      if (user.changed('password')) {
+        try {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        } catch (error) {
+          throw error;
+        }
+      }
+    }
   }
 });
 
-// Sign JWT and return
-UserSchema.methods.getSignedJwtToken = function() {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET || 'fallback_secret', {
+// Instance methods
+User.prototype.getSignedJwtToken = function() {
+  return jwt.sign({ id: this.id }, process.env.JWT_SECRET || 'fallback_secret', {
     expiresIn: process.env.JWT_EXPIRE || '30d'
   });
 };
 
-// Match user entered password to hashed password in database
-UserSchema.methods.matchPassword = async function(enteredPassword) {
+User.prototype.matchPassword = async function(enteredPassword) {
   try {
     // Only allow bcrypt hashed passwords for security
     if (!this.password || (!this.password.startsWith('$2a$') && !this.password.startsWith('$2b$'))) {
@@ -154,8 +152,7 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
   }
 };
 
-// Generate and hash password token
-UserSchema.methods.getResetPasswordToken = function() {
+User.prototype.getResetPasswordToken = function() {
   // Generate token
   const resetToken = crypto.randomBytes(20).toString('hex');
 
@@ -171,4 +168,4 @@ UserSchema.methods.getResetPasswordToken = function() {
   return resetToken;
 };
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = User;

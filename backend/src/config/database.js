@@ -1,36 +1,73 @@
-const mongoose = require('mongoose');
+const { Sequelize } = require('sequelize');
+
+// Get database URI from environment
+let databaseURI = process.env.NODE_ENV === 'production'
+  ? (process.env.DATABASE_URI_PROD || process.env.DATABASE_URI || process.env.DATABASE_URL)
+  : (process.env.DATABASE_URI || process.env.DATABASE_URL || 'postgres://postgres:password@localhost:5432/placementhub');
+
+// If password contains special chars, ensure it's URL-encoded
+if (databaseURI && !databaseURI.includes('%')) {
+  const uriMatch = databaseURI.match(/^postgres(ql)?:\/\/([^:]+):([^@]+)@(.+)$/);
+  if (uriMatch) {
+    const [, , , password] = uriMatch;
+    const encodedPassword = encodeURIComponent(password);
+    databaseURI = databaseURI.replace(`:${password}@`, `:${encodedPassword}@`);
+  }
+}
+
+let sequelize;
+try {
+  // Create Sequelize instance immediately so models can use it
+  sequelize = new Sequelize(databaseURI, {
+  dialect: 'postgres',
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  define: {
+    timestamps: true,
+    underscored: false,
+    freezeTableName: true
+  }
+  });
+} catch (error) {
+  console.error('❌ Failed to initialize Sequelize:', error.message);
+  console.error('💡 Check DATABASE_URI/DATABASE_URL format in .env');
+  throw error;
+}
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.NODE_ENV === 'production' 
-      ? process.env.MONGODB_URI_PROD 
-      : process.env.MONGODB_URI || 'mongodb://localhost:27017/aspiro';
 
-    const conn = await mongoose.connect(mongoURI);
+    // Test the connection
+    await sequelize.authenticate();
+    console.log('📊 PostgreSQL Connected successfully');
 
-    console.log(`📊 MongoDB Connected: ${conn.connection.host}`);
-    
-    // Handle connection events
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
-    });
+    // Ensure extensions needed for indexes exist
+    await sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
 
-    mongoose.connection.on('disconnected', () => {
-      console.log('📊 MongoDB disconnected');
-    });
+    // Sync models (use { alter: true } in development, { force: false } in production)
+    if (process.env.NODE_ENV === 'development') {
+      // NOTE: Change force back to false after first successful run to preserve data
+      await sequelize.sync({ force: false }); 
+      console.log('📊 Database models synchronized');
+    }
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      console.log('📊 MongoDB connection closed through app termination');
+      await sequelize.close();
+      console.log('📊 PostgreSQL connection closed through app termination');
       process.exit(0);
     });
 
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
-    console.log('💡 Make sure MongoDB is running locally or update MONGODB_URI in .env');
+    console.log('💡 Make sure PostgreSQL is running and DATABASE_URI is set correctly in .env');
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+module.exports = { connectDB, sequelize };
