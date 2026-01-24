@@ -1,0 +1,29 @@
+{
+  "name": "aspiro-app",
+  "version": "1.0.0",
+  "description": "AI-Powered Career Recommendation Platform",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\" \"npm run ml-service\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "ml-service": "cd ml-service && python app.py",
+    "test:profile": "node test-profile-functionality.js",
+    "test:dashboard": "node test-dashboard-functionality.js",
+    "test:resume-flow": "node test-resume-dashboard-flow.js",
+    "test:uploadcare": "node test-uploadcare-integration.js",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../ml-service && pip install -r requirements.txt && python train_models.py && cd ..",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "test": "node test-integration.js",
+    "setup": "npm run install-all && npm run test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "axios": "^1.6.2"
+  },
+  "keywords": ["career", "ai", "jobs", "recommendation"],
+  "author": "Aspiro Team",
+  "license": "MIT"
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploadcare Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@uploadcare/upload-client@6.14.1/dist/uploadcare.min.js"></script>
+</head>
+<body>
+    <h1>Uploadcare Integration Test</h1>
+    <input type="file" id="fileInput" accept=".pdf,.doc,.docx">
+    <button onclick="uploadFile()">Upload to Uploadcare</button>
+    <div id="result"></div>
+
+    <script>
+        const PUBLIC_KEY = 'dbf1838a88113c48162b';
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<p style="color: red;">Please select a file</p>';
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = '<p>Uploading...</p>';
+                
+                const client = new uploadcare.UploadClient({ publicKey: PUBLIC_KEY });
+                const result = await client.uploadFile(fileInput.files[0]);
+                
+                resultDiv.innerHTML = `
+                    <h3>Upload Successful!</h3>
+                    <p><strong>UUID:</strong> ${result.uuid}</p>
+                    <p><strong>CDN URL:</strong> <a href="${result.cdnUrl}" target="_blank">${result.cdnUrl}</a></p>
+                    <p><strong>File Size:</strong> ${result.size} bytes</p>
+                    <p><strong>MIME Type:</strong> ${result.mimeType}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Upload failed: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
