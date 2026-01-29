@@ -23,7 +23,12 @@
   "dependencies": {
     "axios": "^1.6.2"
   },
-  "keywords": ["career", "ai", "jobs", "recommendation"],
-  "author": "PlacementHub Team",
+  "keywords": [
+    "career",
+    "ai",
+    "jobs",
+    "recommendation"
+  ],
+  "author": "placeHub Team",
   "license": "MIT"
 }

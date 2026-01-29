@@ -1,6 +1,6 @@
-# PlacementHub Frontend
+# placeHub Frontend
 
-React.js frontend application for the PlacementHub AI-powered career recommendation platform.
+React.js frontend application for the placeHub AI-powered career recommendation platform.
 
 ## 🚀 Features
 
@@ -54,22 +54,26 @@ src/
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Create environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 3. Update environment variables:
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_ML_API_URL=http://localhost:5001/api
 ```
 
 4. Start development server:
+
 ```bash
 npm run dev
 ```

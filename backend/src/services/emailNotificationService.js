@@ -50,7 +50,7 @@ class EmailNotificationService {
               
               <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                This is an automated message from PlacementHub Career Platform.<br>
+                This is an automated message from placeHub Career Platform.<br>
                 Please do not reply to this email.
               </p>
             </div>
@@ -121,7 +121,7 @@ class EmailNotificationService {
               
               <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                This is an automated message from PlacementHub Career Platform.<br>
+                This is an automated message from placeHub Career Platform.<br>
                 Please do not reply to this email.
               </p>
             </div>

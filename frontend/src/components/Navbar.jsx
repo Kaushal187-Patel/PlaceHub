@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout, reset } from '../store/slices/authSlice';
-import { toggleDarkMode } from '../store/slices/themeSlice';
-import { getRoleBasedRoute } from '../utils/roleRedirect';
-import { FiMenu, FiX, FiSun, FiMoon, FiUser, FiLogOut } from 'react-icons/fi';
+import { useState } from "react";
+import { FiLogOut, FiMenu, FiMoon, FiSun, FiUser, FiX } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { logout, reset } from "../store/slices/authSlice";
+import { toggleDarkMode } from "../store/slices/themeSlice";
+import { getRoleBasedRoute } from "../utils/roleRedirect";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,21 +14,21 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.theme);
-  
-  const dashboardRoute = user ? getRoleBasedRoute(user.role) : '/dashboard';
+
+  const dashboardRoute = user ? getRoleBasedRoute(user.role) : "/dashboard";
 
   const handleLogout = () => {
     dispatch(logout());
     dispatch(reset());
-    navigate('/');
+    navigate("/");
   };
 
   const handleThemeToggle = () => {
     dispatch(toggleDarkMode());
     if (darkMode) {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     } else {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     }
   };
 
@@ -38,8 +38,14 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
+              <img
+                src="/logo.png"
+                alt="placeHub"
+                className="h-8 w-8 mr-2 rounded"
+                loading="eager"
+              />
               <span className="text-2xl font-bold text-gray-900 dark:text-brand-200">
-                PlacementHub
+                placeHub
               </span>
             </Link>
           </div>

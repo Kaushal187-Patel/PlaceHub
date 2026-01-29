@@ -1,10 +1,11 @@
-# PlacementHub - AI-Powered Career Recommendation Platform
+# placeHub - AI-Powered Career Recommendation Platform
 
 Complete full-stack application with AI-powered career recommendations and job matching.
 
 ## 🚀 Quick Start
 
 ### Option 1: Run All Services Together
+
 ```bash
 # Install all dependencies
 npm run install-all
@@ -14,12 +15,13 @@ npm run dev
 ```
 
 ### Option 2: Run Services Individually
+
 ```bash
 # Terminal 1 - Backend
 cd backend
 npm run dev
 
-# Terminal 2 - Frontend  
+# Terminal 2 - Frontend
 cd frontend
 npm run dev
 
@@ -29,6 +31,7 @@ python app.py
 ```
 
 ### Option 3: Using Scripts
+
 ```bash
 # Windows
 start.bat
@@ -67,6 +70,7 @@ placementhub-app/
 ## 🔧 Environment Setup
 
 1. **Backend** (.env):
+
 ```env
 NODE_ENV=development
 PORT=5000
@@ -75,12 +79,14 @@ JWT_SECRET=your_jwt_secret
 ```
 
 2. **Frontend** (.env):
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_ML_API_URL=http://localhost:5001/api
 ```
 
 3. **ML Service** (.env):
+
 ```env
 FLASK_ENV=development
 PORT=5001

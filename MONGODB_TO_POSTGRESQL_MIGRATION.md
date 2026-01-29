@@ -1,21 +1,24 @@
 # MongoDB to PostgreSQL Migration Guide
 
-This document outlines the complete migration from MongoDB (Mongoose) to PostgreSQL (Sequelize) for the PlacementHub application.
+This document outlines the complete migration from MongoDB (Mongoose) to PostgreSQL (Sequelize) for the placeHub application.
 
 ## ✅ Completed Changes
 
 ### 1. Package Dependencies
+
 - **Removed**: `mongoose`, `express-mongo-sanitize`
 - **Added**: `sequelize`, `pg`
 - Updated `package.json` keywords from "mongodb" to "postgresql"
 
 ### 2. Database Configuration
+
 - **File**: `backend/src/config/database.js`
 - Replaced Mongoose connection with Sequelize
 - Uses `DATABASE_URI` environment variable
 - Supports connection pooling and graceful shutdown
 
 ### 3. Models Converted (All to Sequelize)
+
 All models have been converted from Mongoose schemas to Sequelize models:
 
 - ✅ **User** (`backend/src/models/User.js`)
@@ -46,14 +49,16 @@ All models have been converted from Mongoose schemas to Sequelize models:
   - Foreign keys: `userId`, `applicationId`
 
 ### 4. Model Associations
+
 - **File**: `backend/src/models/index.js` (NEW)
 - All model associations defined (hasMany, belongsTo)
 - Must be imported before using models with associations
 
 ### 5. Controllers Updated
+
 All controllers converted from Mongoose queries to Sequelize:
 
-- ✅ **users.js**: 
+- ✅ **users.js**:
   - `find()` → `findAll()` / `findAndCountAll()`
   - `findById()` → `findByPk()`
   - `findOne()` → `findOne()`
@@ -75,14 +80,17 @@ All controllers converted from Mongoose queries to Sequelize:
   - `select('+password')` → `attributes: { include: ['password'] }`
 
 ### 6. Middleware Updated
+
 - ✅ **auth.js**: `findById()` → `findByPk()`
 
 ### 7. Services Updated
+
 - ✅ **jobExpiryService.js**: All MongoDB queries converted to Sequelize
 - ✅ **chatbotService.js**: `findById()` → `findByPk()`
 
 ### 8. Configuration Files
-- ✅ **app.js**: 
+
+- ✅ **app.js**:
   - Removed `express-mongo-sanitize`
   - Updated database connection import
   - Added models initialization
@@ -94,32 +102,37 @@ All controllers converted from Mongoose queries to Sequelize:
 ## 🔧 Setup Instructions
 
 ### 1. Install Dependencies
+
 ```bash
 cd backend
 npm install
 ```
 
 This will install:
+
 - `sequelize` (v6.35.2)
 - `pg` (v8.11.3)
 
 ### 2. Configure Environment Variables
+
 Create a `.env` file in the `backend` directory with:
 
 ```env
-DATABASE_URI=postgres://postgres:Kaushal%408697@127.0.0.1:5432/PlacementHub
+DATABASE_URI=postgres://postgres:Kaushal%408697@127.0.0.1:5432/placeHub
 ```
 
 **Note**: URL-encode special characters in passwords (e.g., `@` becomes `%40`)
 
 ### 3. Database Setup
-Make sure PostgreSQL is running and the database `PlacementHub` exists:
+
+Make sure PostgreSQL is running and the database `placeHub` exists:
 
 ```sql
-CREATE DATABASE PlacementHub;
+CREATE DATABASE placeHub;
 ```
 
 ### 4. Run Database Migrations
+
 The application will automatically sync models on first run (development mode).
 For production, you should use migrations:
 
@@ -134,6 +147,7 @@ npx sequelize-cli migration:generate --name initial-schema
 ### 5. Important Notes
 
 #### Field Name Changes
+
 - `_id` → `id` (UUID instead of ObjectId)
 - `recruiter` → `recruiterId` (in Job model)
 - `user` → `userId` (in Application, Resume, SavedJob, Notification)
@@ -141,6 +155,7 @@ npx sequelize-cli migration:generate --name initial-schema
 - `resume` → `resumeId` (in Application)
 
 #### Query Changes
+
 - MongoDB: `User.find({ email: 'test@example.com' })`
 - Sequelize: `User.findOne({ where: { email: 'test@example.com' } })`
 
@@ -151,10 +166,12 @@ npx sequelize-cli migration:generate --name initial-schema
 - Sequelize: `include: [{ model: Job, as: 'job' }]`
 
 #### Array Queries
+
 - MongoDB: `skills: { $in: ['JavaScript', 'Python'] }`
 - Sequelize: `skills: { [Op.overlap]: ['JavaScript', 'Python'] }`
 
 #### Date Queries
+
 - MongoDB: `applicationDeadline: { $gt: new Date() }`
 - Sequelize: `applicationDeadline: { [Op.gt]: new Date() }`
 
@@ -175,12 +192,13 @@ npx sequelize-cli migration:generate --name initial-schema
 
 4. **Model Imports**: Models should be imported from `../models` (index file)
    ```javascript
-   const { User, Job, Application } = require('../models');
+   const { User, Job, Application } = require("../models");
    ```
 
 ## 📝 Next Steps
 
 1. **Test the Application**:
+
    ```bash
    npm run dev
    ```
@@ -225,16 +243,19 @@ npx sequelize-cli migration:generate --name initial-schema
 ## ⚠️ Troubleshooting
 
 ### Connection Issues
+
 - Verify PostgreSQL is running: `pg_isready`
 - Check DATABASE_URI format and encoding
 - Verify database exists: `psql -l`
 
 ### Model Sync Issues
+
 - Check for syntax errors in model definitions
 - Verify all foreign key references are correct
 - Check that models/index.js is imported before using associations
 
 ### Query Issues
+
 - Ensure Sequelize operators are imported: `const { Op } = require('sequelize');`
 - Check that `include` arrays match association names defined in models/index.js
 

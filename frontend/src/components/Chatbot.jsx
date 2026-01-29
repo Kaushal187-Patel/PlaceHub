@@ -1,19 +1,19 @@
-import { useState, useRef, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiMessageCircle, FiX, FiSend, FiTrash2 } from 'react-icons/fi';
-import chatbotService from '../services/chatbotService';
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { FiMessageCircle, FiSend, FiTrash2, FiX } from "react-icons/fi";
+import { useSelector } from "react-redux";
+import chatbotService from "../services/chatbotService";
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const { user } = useSelector((state) => state.auth);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -25,9 +25,9 @@ const Chatbot = () => {
       // Send welcome message when chatbot opens
       const welcomeMessage = {
         id: Date.now(),
-        text: `Hello ${user?.name || 'there'}! 👋 I'm your AI career assistant. How can I help you today?`,
-        sender: 'bot',
-        timestamp: new Date()
+        text: `Hello ${user?.name || "there"}! 👋 I'm your AI career assistant. How can I help you today?`,
+        sender: "bot",
+        timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
     }
@@ -39,33 +39,33 @@ const Chatbot = () => {
     const userMessage = {
       id: Date.now(),
       text: inputMessage,
-      sender: 'user',
-      timestamp: new Date()
+      sender: "user",
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
     setIsLoading(true);
 
     try {
       const response = await chatbotService.sendMessage(inputMessage);
-      
+
       const botMessage = {
         id: Date.now() + 1,
         text: response.data.message,
-        sender: 'bot',
-        timestamp: new Date()
+        sender: "bot",
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       const errorMessage = {
         id: Date.now() + 1,
         text: "I'm having trouble processing your request. Please try again.",
-        sender: 'bot',
-        timestamp: new Date()
+        sender: "bot",
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -77,18 +77,18 @@ const Chatbot = () => {
       setMessages([]);
       const welcomeMessage = {
         id: Date.now(),
-        text: `Hello ${user?.name || 'there'}! 👋 I'm your AI career assistant. How can I help you today?`,
-        sender: 'bot',
-        timestamp: new Date()
+        text: `Hello ${user?.name || "there"}! 👋 I'm your AI career assistant. How can I help you today?`,
+        sender: "bot",
+        timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
     } catch (error) {
-      console.error('Failed to clear session:', error);
+      console.error("Failed to clear session:", error);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -97,17 +97,17 @@ const Chatbot = () => {
   const formatMessage = (text) => {
     // Convert markdown-like formatting to HTML
     return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br>')
-      .replace(/•/g, '•');
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/\n/g, "<br>")
+      .replace(/•/g, "•");
   };
 
   if (!user) return null;
 
   return (
     <>
-      {/* Aspira Chat Button */}
+      {/* placeHub Chat Button */}
       <motion.div
         className="fixed bottom-6 right-6 z-50"
         whileHover={{ scale: 1.05 }}
@@ -127,7 +127,7 @@ const Chatbot = () => {
               animate={{ opacity: 1, x: 0 }}
               className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-lg"
             >
-              Chat with Aspira
+              Chat with placeHub
               <div className="absolute left-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-blue-600 border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
             </motion.div>
           )}
@@ -148,13 +148,13 @@ const Chatbot = () => {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">A</span>
+                    <span className="text-white font-bold text-lg">P</span>
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-white text-lg">
-                    Aspira
+                    placeHub
                   </h3>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     AI Career Assistant
@@ -175,25 +175,25 @@ const Chatbot = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-[80%] p-3 rounded-lg ${
-                      message.sender === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                      message.sender === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
                     }`}
                   >
                     <div
                       className="text-sm"
                       dangerouslySetInnerHTML={{
-                        __html: formatMessage(message.text)
+                        __html: formatMessage(message.text),
                       }}
                     />
                     <div className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </div>
                   </div>
@@ -205,8 +205,14 @@ const Chatbot = () => {
                   <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
                     </div>
                   </div>
                 </div>

@@ -68,7 +68,7 @@ class JobExpiryService {
       const daysLeft = Math.ceil((job.applicationDeadline - new Date()) / (1000 * 60 * 60 * 24));
       
       const mailOptions = {
-        from: `"PlacementHub Career Platform" <${process.env.EMAIL_USER}>`,
+        from: `"placeHub Career Platform" <${process.env.EMAIL_USER}>`,
         to: recruiter.email,
         subject: `Job Application Deadline Reminder - ${job.title}`,
         html: `
@@ -108,7 +108,7 @@ class JobExpiryService {
               
               <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                This is an automated reminder from PlacementHub Career Platform.<br>
+                This is an automated reminder from placeHub Career Platform.<br>
                 Please do not reply to this email.
               </p>
             </div>

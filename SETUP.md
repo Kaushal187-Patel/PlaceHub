@@ -1,10 +1,11 @@
-# PlacementHub Project Setup Guide
+# placeHub Project Setup Guide
 
-Complete setup guide for the PlacementHub AI-Powered Career Recommendation Platform.
+Complete setup guide for the placeHub AI-Powered Career Recommendation Platform.
 
 ## 🚀 Quick Start
 
 ### Option 1: Automated Setup (Recommended)
+
 ```bash
 # Windows
 start.bat
@@ -15,6 +16,7 @@ chmod +x start.sh
 ```
 
 ### Option 2: Manual Setup
+
 ```bash
 # 1. Install all dependencies
 npm run install-all
@@ -53,6 +55,7 @@ npm test
 ## 🔧 Environment Configuration
 
 ### Backend (.env)
+
 ```env
 NODE_ENV=development
 PORT=5000
@@ -62,12 +65,14 @@ ML_SERVICE_URL=http://localhost:5001
 ```
 
 ### Frontend (.env)
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_ML_API_URL=http://localhost:5001/api
 ```
 
 ### ML Service (.env)
+
 ```env
 FLASK_ENV=development
 PORT=5001
@@ -77,6 +82,7 @@ BACKEND_URL=http://localhost:5000
 ## 🛠️ Individual Service Setup
 
 ### Backend Setup
+
 ```bash
 cd backend
 npm install
@@ -84,6 +90,7 @@ npm run dev
 ```
 
 ### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -91,6 +98,7 @@ npm run dev
 ```
 
 ### ML Service Setup
+
 ```bash
 cd ml-service
 pip install -r requirements.txt
@@ -101,6 +109,7 @@ python app.py
 ## 🧪 Testing
 
 ### Integration Tests
+
 ```bash
 # Test all services together
 npm test
@@ -110,6 +119,7 @@ cd ml-service && python test_service.py
 ```
 
 ### Manual Testing
+
 1. **Frontend**: http://localhost:5173
 2. **Backend API**: http://localhost:5000/api/health
 3. **ML Service**: http://localhost:5001/api/health
@@ -130,24 +140,28 @@ docker-compose down
 ## 📊 Features Overview
 
 ### ✅ Career Recommendation System
+
 - AI-powered career suggestions
 - Random Forest + KNN algorithms
 - Real-time predictions
 - User profile analysis
 
 ### ✅ Resume Analyzer
+
 - PDF/DOCX parsing
 - NLP entity extraction
 - Job matching with similarity scoring
 - Comprehensive feedback
 
 ### ✅ User Management
+
 - Authentication & authorization
 - Profile management
 - History tracking
 - Role-based access
 
 ### ✅ Job Management
+
 - Job posting & search
 - Application tracking
 - Recruiter dashboard
@@ -156,20 +170,24 @@ docker-compose down
 ## 🔍 API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user
 
 ### Career Services
+
 - `POST /api/careers/suggestions` - Get career recommendations
 - `POST /api/careers/report` - Generate career report
 - `GET /api/careers/history` - Get recommendation history
 
 ### Resume Services
+
 - `POST /api/resume/analyze` - Analyze resume
 - `GET /api/resume/history` - Get analysis history
 
 ### ML Services (Direct)
+
 - `POST /api/career/recommend` - Direct ML career recommendation
 - `POST /api/resume/analyze` - Direct ML resume analysis
 
@@ -178,6 +196,7 @@ docker-compose down
 ### Common Issues
 
 #### Port Conflicts
+
 ```bash
 # Check if ports are in use
 netstat -an | findstr :5000
@@ -189,6 +208,7 @@ taskkill /PID <process_id> /F
 ```
 
 #### Python Dependencies
+
 ```bash
 # If pip install fails, try:
 pip install --upgrade pip
@@ -196,6 +216,7 @@ pip install -r requirements.txt --no-cache-dir
 ```
 
 #### MongoDB Connection
+
 ```bash
 # Check MongoDB status
 mongosh --eval "db.adminCommand('ismaster')"
@@ -204,6 +225,7 @@ mongosh --eval "db.adminCommand('ismaster')"
 ```
 
 #### ML Models Not Training
+
 ```bash
 cd ml-service
 python train_models.py
@@ -213,11 +235,13 @@ python train_models.py
 ## 📈 Performance Optimization
 
 ### Development
+
 - Use `npm run dev` for hot reloading
 - Enable MongoDB indexing
 - Use Redis for caching (optional)
 
 ### Production
+
 - Build frontend: `npm run build`
 - Use PM2 for process management
 - Enable gzip compression
@@ -235,6 +259,7 @@ python train_models.py
 ## 📝 Development Workflow
 
 1. **Start Development**
+
    ```bash
    npm run dev
    ```
@@ -245,6 +270,7 @@ python train_models.py
    - ML Service: Manual restart needed
 
 3. **Test Changes**
+
    ```bash
    npm test
    ```
@@ -278,6 +304,7 @@ If you encounter issues:
 5. Ensure all prerequisites are installed
 
 For additional help, check the individual service README files:
+
 - `backend/README.md`
 - `frontend/README.md`
 - `ml-service/README.md`

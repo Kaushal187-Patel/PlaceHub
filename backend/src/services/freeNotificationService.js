@@ -128,13 +128,13 @@ class FreeNotificationService {
   async sendEmail(email, subject, message, applicationId, userId, status) {
     try {
       const mailOptions = {
-        from: `"PlacementHub Career Platform" <${process.env.EMAIL_USER}>`,
+        from: `"placeHub Career Platform" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0;">
-              <h1 style="color: white; margin: 0; text-align: center;">PlacementHub Career Platform</h1>
+              <h1 style="color: white; margin: 0; text-align: center;">placeHub Career Platform</h1>
             </div>
             <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
               <h2 style="color: #333; margin-top: 0;">Application Status Update</h2>
@@ -144,7 +144,7 @@ class FreeNotificationService {
               </div>
               <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
               <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                This is an automated message from PlacementHub Career Platform.<br>
+                This is an automated message from placeHub Career Platform.<br>
                 Please do not reply to this email.
               </p>
             </div>
