@@ -49,10 +49,11 @@ const connectDB = async () => {
     // Ensure extensions needed for indexes exist
     await sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
 
-    // Sync models (use { alter: true } in development, { force: false } in production)
-    if (process.env.NODE_ENV === 'development') {
-      // NOTE: Change force back to false after first successful run to preserve data
-      await sequelize.sync({ force: false }); 
+    // Sync models
+    // In production (Render), you likely need an initial schema without migrations.
+    // Enable this by setting DB_SYNC=true in environment variables.
+    if (process.env.NODE_ENV === 'development' || process.env.DB_SYNC === 'true') {
+      await sequelize.sync({ force: false });
       console.log('📊 Database models synchronized');
     }
 

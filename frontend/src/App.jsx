@@ -1,26 +1,26 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
-import { store } from './store';
-import MainLayout from './layouts/MainLayout';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import Dashboard from './pages/Dashboard';
-import StudentDashboard from './pages/StudentDashboard';
-import RecruiterDashboard from './pages/RecruiterDashboard';
-import Jobs from './pages/Jobs';
-import CareerRecommendations from './pages/CareerRecommendations';
-import ResumeAnalyzer from './pages/ResumeAnalyzer';
-import Profile from './pages/Profile';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import AuthSuccess from './pages/AuthSuccess';
-import ProtectedRoute from './components/ProtectedRoute';
-import 'react-toastify/dist/ReactToastify.css';
+import { Provider } from "react-redux";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ProtectedRoute from "./components/ProtectedRoute";
+import MainLayout from "./layouts/MainLayout";
+import About from "./pages/About";
+import AuthSuccess from "./pages/AuthSuccess";
+import CareerRecommendations from "./pages/CareerRecommendations";
+import Contact from "./pages/Contact";
+import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import Home from "./pages/Home";
+import Jobs from "./pages/Jobs";
+import Login from "./pages/Login";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Profile from "./pages/Profile";
+import RecruiterDashboard from "./pages/RecruiterDashboard";
+import Register from "./pages/Register";
+import ResumeAnalyzer from "./pages/ResumeAnalyzer";
+import StudentDashboard from "./pages/StudentDashboard";
+import TermsOfService from "./pages/TermsOfService";
+import { store } from "./store";
 
 function App() {
   return (
@@ -35,7 +35,10 @@ function App() {
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="auth/success" element={<AuthSuccess />} />
               <Route path="jobs" element={<Jobs />} />
-              <Route path="career-recommendations" element={<CareerRecommendations />} />
+              <Route
+                path="career-recommendations"
+                element={<CareerRecommendations />}
+              />
               <Route path="resume-analyzer" element={<ResumeAnalyzer />} />
               <Route path="about" element={<About />} />
               <Route path="contact" element={<Contact />} />
