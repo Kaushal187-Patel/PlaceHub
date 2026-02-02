@@ -1,7 +1,8 @@
-import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import Chatbot from '../components/Chatbot';
+import { Outlet } from "react-router-dom";
+import Chatbot from "../components/Chatbot";
+import CustomCursor from "../components/CustomCursor";
+import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 
 const MainLayout = () => {
   return (
@@ -12,6 +13,7 @@ const MainLayout = () => {
       </main>
       <Footer />
       <Chatbot />
+      <CustomCursor />
     </div>
   );
 };

@@ -4,7 +4,7 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
 
   body {
@@ -19,7 +19,7 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -59,14 +59,16 @@
 
 /* Smooth transitions */
 * {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
 /* Gradient text animations */
 @keyframes gradient-x {
-  0%, 100% {
+  0%,
+  100% {
     background-size: 200% 200%;
     background-position: left center;
   }
@@ -82,7 +84,8 @@
 
 /* Custom pulse animation */
 @keyframes custom-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -92,4 +95,71 @@
 
 .animate-custom-pulse {
   animation: custom-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ----------------------------
+   Custom animated mouse cursor
+   (desktop only: pointer: fine)
+-----------------------------*/
+@media (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+
+  .custom-cursor-dot,
+  .custom-cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate3d(-100px, -100px, 0);
+    will-change: transform;
+  }
+
+  .custom-cursor-dot {
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    margin-top: -4px;
+    border-radius: 9999px;
+    background: rgba(217, 162, 153, 0.95); /* brand-300 */
+    box-shadow: 0 0 0 6px rgba(217, 162, 153, 0.12);
+    transition:
+      transform 120ms ease,
+      box-shadow 200ms ease,
+      background-color 200ms ease;
+  }
+
+  .custom-cursor-ring {
+    width: 34px;
+    height: 34px;
+    margin-left: -17px;
+    margin-top: -17px;
+    border-radius: 9999px;
+    border: 2px solid rgba(217, 162, 153, 0.65);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    transition:
+      width 200ms ease,
+      height 200ms ease,
+      margin 200ms ease,
+      border-color 200ms ease,
+      background-color 200ms ease;
+  }
+
+  /* Hovering interactive elements (links/buttons) */
+  .custom-cursor-dot--pointer {
+    box-shadow: 0 0 0 10px rgba(217, 162, 153, 0.18);
+  }
+
+  .custom-cursor-ring--pointer {
+    width: 42px;
+    height: 42px;
+    margin-left: -21px;
+    margin-top: -21px;
+    border-color: rgba(217, 162, 153, 0.95);
+    background: rgba(217, 162, 153, 0.08);
+  }
 }
