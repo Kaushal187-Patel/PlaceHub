@@ -382,17 +382,19 @@ const ResumeAnalyzer = () => {
                             What to DO
                           </h4>
                           <ul className="space-y-2">
-                            {(analysis.suggestions.dos || []).map((item, index) => (
-                              <li
-                                key={index}
-                                className="flex items-start text-green-700 dark:text-green-300 text-sm"
-                              >
-                                <span className="text-green-600 mr-2 mt-1">
-                                  ✓
-                                </span>
-                                {item}
-                              </li>
-                            ))}
+                            {(analysis.suggestions.dos || []).map(
+                              (item, index) => (
+                                <li
+                                  key={index}
+                                  className="flex items-start text-green-700 dark:text-green-300 text-sm"
+                                >
+                                  <span className="text-green-600 mr-2 mt-1">
+                                    ✓
+                                  </span>
+                                  {item}
+                                </li>
+                              ),
+                            )}
                           </ul>
                         </div>
 
@@ -403,17 +405,19 @@ const ResumeAnalyzer = () => {
                             What NOT to DO
                           </h4>
                           <ul className="space-y-2">
-                            {(analysis.suggestions.donts || []).map((item, index) => (
-                              <li
-                                key={index}
-                                className="flex items-start text-red-700 dark:text-red-300 text-sm"
-                              >
-                                <span className="text-red-600 mr-2 mt-1">
-                                  ✗
-                                </span>
-                                {item}
-                              </li>
-                            ))}
+                            {(analysis.suggestions.donts || []).map(
+                              (item, index) => (
+                                <li
+                                  key={index}
+                                  className="flex items-start text-red-700 dark:text-red-300 text-sm"
+                                >
+                                  <span className="text-red-600 mr-2 mt-1">
+                                    ✗
+                                  </span>
+                                  {item}
+                                </li>
+                              ),
+                            )}
                           </ul>
                         </div>
                       </div>
