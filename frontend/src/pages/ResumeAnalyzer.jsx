@@ -242,9 +242,16 @@ const ResumeAnalyzer = () => {
           {/* Analysis Results */}
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
-                Analysis Results
-              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  Analysis Results
+                </h2>
+                {analysis && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Analyzed for: <strong>{selectedJobRole}</strong>
+                  </span>
+                )}
+              </div>
 
               {!analysis ? (
                 <div className="text-center py-12">
@@ -264,7 +271,7 @@ const ResumeAnalyzer = () => {
                   {/* Overall Score */}
                   <div
                     className={`p-4 rounded-lg ${getScoreBgColor(
-                      analysis.score,
+                      analysis.match_percentage ?? 0,
                     )}`}
                   >
                     <div className="flex items-center justify-between">
@@ -293,19 +300,24 @@ const ResumeAnalyzer = () => {
                     </div>
                   </div>
 
-                  {/* Experience Level */}
+                  {/* Experience Level - from analyzed resume only */}
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                       Experience Level
                     </h3>
                     <p className="text-blue-700 dark:text-blue-300">
-                      {analysis.analysis_summary?.experience_level ||
+                      {analysis.analysis_summary?.experience_level ??
                         (typeof analysis.experience_years === "number"
                           ? `${analysis.experience_years} year${
                               analysis.experience_years === 1 ? "" : "s"
-                            }`
-                          : "Experience not detected from resume")}
+                            } (from resume)`
+                          : "Could not detect experience from resume.")}
                     </p>
+                    {analysis.overall_rating && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                        Overall rating: {analysis.overall_rating}
+                      </p>
+                    )}
                   </div>
 
                   {/* Identified Skills */}
@@ -353,8 +365,10 @@ const ResumeAnalyzer = () => {
                       </div>
                     )}
 
-                  {/* Improvement Suggestions */}
-                  {analysis.suggestions && (
+                  {/* Improvement Suggestions - What to DO / What NOT to DO */}
+                  {(analysis.suggestions?.dos?.length > 0 ||
+                    analysis.suggestions?.donts?.length > 0 ||
+                    analysis.suggestions?.improvements?.length > 0) && (
                     <div className="space-y-4">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                         Resume Improvement Guide
@@ -368,7 +382,7 @@ const ResumeAnalyzer = () => {
                             What to DO
                           </h4>
                           <ul className="space-y-2">
-                            {analysis.suggestions.dos?.map((item, index) => (
+                            {(analysis.suggestions.dos || []).map((item, index) => (
                               <li
                                 key={index}
                                 className="flex items-start text-green-700 dark:text-green-300 text-sm"
@@ -389,7 +403,7 @@ const ResumeAnalyzer = () => {
                             What NOT to DO
                           </h4>
                           <ul className="space-y-2">
-                            {analysis.suggestions.donts?.map((item, index) => (
+                            {(analysis.suggestions.donts || []).map((item, index) => (
                               <li
                                 key={index}
                                 className="flex items-start text-red-700 dark:text-red-300 text-sm"
@@ -405,7 +419,7 @@ const ResumeAnalyzer = () => {
                       </div>
 
                       {/* Priority Improvements */}
-                      {analysis.suggestions.improvements && (
+                      {analysis.suggestions.improvements?.length > 0 && (
                         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                           <h4 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-3 flex items-center">
                             <FiTrendingUp className="h-5 w-5 mr-2" />
@@ -479,26 +493,6 @@ const ResumeAnalyzer = () => {
                       )}
                     </div>
                   )}
-
-                  {/* Identified Skills */}
-                  {analysis.skills_found &&
-                    analysis.skills_found.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                          Identified Skills
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {analysis.skills_found.map((skill, index) => (
-                            <span
-                              key={index}
-                              className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                   {/* Skill Categories */}
                   {analysis.skill_categories &&
