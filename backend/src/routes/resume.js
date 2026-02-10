@@ -3,7 +3,8 @@ const {
   analyzeResume,
   getResumeHistory,
   deleteResumeHistory,
-  getLatestResume
+  getLatestResume,
+  downloadResume
 } = require('../controllers/resume');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -24,5 +25,8 @@ router.route('/latest')
 router.route('/history')
   .get(getResumeHistory)
   .delete(deleteResumeHistory);
+
+router.route('/:id')
+  .get(downloadResume);
 
 module.exports = router;

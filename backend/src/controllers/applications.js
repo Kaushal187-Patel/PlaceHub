@@ -182,6 +182,7 @@ const getApplications = async (req, res) => {
 
     const recruiterId = req.user.id;
     let applications = await Application.findAll({
+      attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'createdAt', 'lastUpdated'],
       include: [
         {
           model: User,
@@ -194,6 +195,12 @@ const getApplications = async (req, res) => {
           attributes: ['id', 'title', 'company', 'location', 'skills'],
           where: { recruiterId },
           required: true
+        },
+        {
+          model: Resume,
+          as: 'resume',
+          attributes: ['id', 'filename', 'filePath', 'originalName', 'mimeType'],
+          required: false
         }
       ],
       order: [['createdAt', 'DESC']]
@@ -204,13 +211,20 @@ const getApplications = async (req, res) => {
 
     if (applications === null) {
       applications = await Application.findAll({
+        attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'createdAt', 'lastUpdated'],
         include: [
           {
             model: Job,
             as: 'job',
-            attributes: ['id', 'title', 'company'],
+            attributes: ['id', 'title', 'company', 'location', 'skills'],
             where: { recruiterId },
             required: true
+          },
+          {
+            model: Resume,
+            as: 'resume',
+            attributes: ['id', 'filename', 'filePath', 'originalName', 'mimeType'],
+            required: false
           }
         ],
         order: [['createdAt', 'DESC']]
@@ -228,6 +242,19 @@ const getApplications = async (req, res) => {
         return { ...app.toJSON(), user: u || null };
       });
     }
+
+    // Log resume data for debugging
+    console.log('Applications fetched:', applications.length);
+    applications.forEach((app, idx) => {
+      if (idx < 3) { // Log first 3
+        console.log(`App ${idx + 1}:`, {
+          id: app.id,
+          resumeId: app.resumeId,
+          hasResume: !!app.resume,
+          resumeIdFromResume: app.resume?.id
+        });
+      }
+    });
 
     res.status(200).json({
       status: 'success',

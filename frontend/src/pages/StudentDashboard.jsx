@@ -1363,8 +1363,8 @@ const StudentDashboard = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                   activeTab === tab.id
-                    ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600"
-                    : "text-gray-700 dark:text-gray-300"
+                    ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-r-2 border-gray-900 dark:border-gray-300 font-medium"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70"
                 }`}
               >
                 <tab.icon className="h-5 w-5 mr-3" />

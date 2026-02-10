@@ -22,7 +22,8 @@ export default function CustomCursor() {
     setEnabled(canUseFinePointer);
     if (!canUseFinePointer) return;
 
-    document.documentElement.classList.add("has-custom-cursor");
+    const root = document.documentElement;
+    root.classList.add("has-custom-cursor");
 
     const onMove = (e) => {
       mouse.current.x = e.clientX;
@@ -39,6 +40,11 @@ export default function CustomCursor() {
         "a, button, input, textarea, select, [role='button'], [data-cursor='pointer']",
       );
       setIsPointer(isInteractive);
+      if (isInteractive) {
+        root.classList.add("custom-cursor-over-clickable");
+      } else {
+        root.classList.remove("custom-cursor-over-clickable");
+      }
     };
 
     const animate = () => {
@@ -60,7 +66,10 @@ export default function CustomCursor() {
     rafId.current = window.requestAnimationFrame(animate);
 
     return () => {
-      document.documentElement.classList.remove("has-custom-cursor");
+      root.classList.remove(
+        "has-custom-cursor",
+        "custom-cursor-over-clickable",
+      );
       window.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", onOver);
       if (rafId.current) window.cancelAnimationFrame(rafId.current);

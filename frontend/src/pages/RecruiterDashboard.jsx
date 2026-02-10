@@ -114,25 +114,33 @@ const RecruiterDashboard = () => {
       const response = await applicationService.getApplications();
       const list = Array.isArray(response?.data) ? response.data : [];
       if (response?.status === "success") {
-        const apps = list.map((app) => ({
-          id: app.id,
-          candidateName: app.user?.name ?? "—",
-          email: app.user?.email ?? "—",
-          jobTitle: app.job?.title ?? "—",
-          jobId: app.job?.id,
-          appliedDate: app.createdAt
-            ? new Date(app.createdAt).toLocaleDateString()
-            : "—",
-          status: app.status ?? "pending",
-          skills: Array.isArray(app.job?.skills)
-            ? app.job.skills
-            : app.job?.skills
-            ? [app.job.skills]
-            : [],
-          experience: "—",
-          location: app.job?.location ?? "—",
-          resumeUrl: null,
-        }));
+        const apps = list.map((app) => {
+          return {
+            id: app.id,
+            candidateName: app.user?.name ?? "—",
+            email: app.user?.email ?? "—",
+            jobTitle: app.job?.title ?? "—",
+            jobId: app.job?.id,
+            appliedDate: app.createdAt
+              ? new Date(app.createdAt).toLocaleDateString()
+              : "—",
+            status: app.status ?? "pending",
+            skills: Array.isArray(app.job?.skills)
+              ? app.job.skills
+              : app.job?.skills
+              ? [app.job.skills]
+              : [],
+            experience: "—",
+            location: app.job?.location ?? "—",
+            resumeId: app.resumeId || app.resume?.id || null,
+            resume: app.resume || null,
+            resumeUrl: app.resume?.filePath
+              ? `/api/resume/${app.resume.id}`
+              : null,
+            resumeFilename:
+              app.resume?.originalName || app.resume?.filename || null,
+          };
+        });
         const shortlisted = apps.filter(
           (a) => a.status === "shortlisted",
         ).length;
@@ -190,6 +198,89 @@ const RecruiterDashboard = () => {
     } catch (error) {
       console.error("Error updating application status:", error);
       alert("Failed to update status: " + error.message);
+    }
+  };
+
+  const handleViewResume = async (application) => {
+    console.log("View resume clicked:", {
+      applicationId: application.id,
+      resumeId: application.resumeId,
+      resume: application.resume,
+      candidateEmail: application.email,
+    });
+
+    const resumeId = application.resumeId || application.resume?.id;
+
+    if (!resumeId) {
+      alert(
+        "No resume available for this application. The candidate may not have uploaded a resume when applying.",
+      );
+      return;
+    }
+
+    try {
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+      const token = user?.token;
+
+      if (!token) {
+        alert("Please log in to view resumes.");
+        return;
+      }
+
+      const response = await fetch(`/api/resume/${resumeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download =
+          application.resumeFilename ||
+          application.resume?.originalName ||
+          `resume_${application.candidateName || "candidate"}.pdf`;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Resume download error:", errorData);
+        alert(
+          errorData.message ||
+            "Resume not available. The file may have been removed from the server.",
+        );
+      }
+    } catch (error) {
+      console.error("Error viewing resume:", error);
+      alert("Failed to load resume. Please try again or contact support.");
+    }
+  };
+
+  const handleShortlist = async (applicationId) => {
+    await handleApplicationStatusChange(applicationId, "shortlisted");
+  };
+
+  const handleScheduleInterview = async (applicationId) => {
+    await handleApplicationStatusChange(applicationId, "interview");
+  };
+
+  const handleSendMessage = (application) => {
+    alert(
+      `Messaging feature coming soon! Contact ${
+        application.email || application.candidateName
+      }`,
+    );
+  };
+
+  const handleReject = async (applicationId) => {
+    if (window.confirm("Are you sure you want to reject this application?")) {
+      await handleApplicationStatusChange(applicationId, "rejected");
     }
   };
 
@@ -1293,30 +1384,35 @@ const RecruiterDashboard = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <button
+                            onClick={() => handleViewResume(app)}
                             className="text-blue-600 hover:text-blue-700"
                             title="View Resume"
                           >
                             <FiFileText className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => handleShortlist(app.id)}
                             className="text-green-600 hover:text-green-700"
                             title="Shortlist"
                           >
                             <FiCheck className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => handleScheduleInterview(app.id)}
                             className="text-purple-600 hover:text-purple-700"
                             title="Schedule Interview"
                           >
                             <FiCalendar className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => handleSendMessage(app)}
                             className="text-gray-600 hover:text-gray-700"
                             title="Send Message"
                           >
                             <FiMessageSquare className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => handleReject(app.id)}
                             className="text-red-600 hover:text-red-700"
                             title="Reject"
                           >
@@ -1525,14 +1621,14 @@ const RecruiterDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                className={`w-full flex items-center px-6 py-3 text-left transition-colors ${
                   activeTab === tab.id
-                    ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600"
-                    : "text-gray-700 dark:text-gray-300"
+                    ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-r-2 border-gray-900 dark:border-gray-300 font-medium"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/70"
                 }`}
               >
-                <tab.icon className="h-5 w-5 mr-3" />
-                {tab.label}
+                <tab.icon className="h-5 w-5 mr-3 flex-shrink-0" />
+                <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </nav>

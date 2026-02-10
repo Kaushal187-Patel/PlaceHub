@@ -149,6 +149,43 @@ const getLatestResume = async (req, res) => {
   }
 };
 
+const downloadResume = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resume = await Resume.findByPk(id);
+    
+    if (!resume) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Resume not found'
+      });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(resume.filePath)) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Resume file not found on server'
+      });
+    }
+
+    // Set headers for file download
+    res.setHeader('Content-Type', resume.mimeType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${resume.originalName}"`);
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(resume.filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Download resume error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to download resume',
+      error: error.message
+    });
+  }
+};
+
 const getResumeHistory = async (req, res) => {
   try {
     const resumes = await Resume.findAll({
@@ -207,5 +244,6 @@ module.exports = {
   analyzeResume,
   getLatestResume,
   getResumeHistory,
-  deleteResumeHistory
+  deleteResumeHistory,
+  downloadResume
 };
