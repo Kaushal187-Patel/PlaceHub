@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   FiAlertCircle,
   FiBarChart2,
-  FiBell,
   FiBookmark,
   FiBriefcase,
   FiCheckCircle,
@@ -283,7 +282,6 @@ const StudentDashboard = () => {
                 ? `$${job.salaryMin}k-$${job.salaryMax}k`
                 : "Competitive",
             type: job.type,
-            matchScore: Math.floor(Math.random() * 20) + 80,
             posted: new Date(job.createdAt).toLocaleDateString(),
             saved: false,
             description: job.description,
@@ -383,9 +381,6 @@ const StudentDashboard = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <div className="text-right">
-                  <div className="text-sm font-medium text-green-600">
-                    {job.matchScore}% match
-                  </div>
                   <div className="text-xs text-gray-500">{job.posted}</div>
                 </div>
                 <button
@@ -1207,7 +1202,6 @@ const StudentDashboard = () => {
                     <div className="text-lg font-bold text-green-600">
                       {rec.match_percentage}%
                     </div>
-                    <div className="text-xs text-gray-500">Match Score</div>
                   </div>
                   <button className="text-yellow-500 hover:text-yellow-600">
                     <FiStar className="h-5 w-5" />
@@ -1360,19 +1354,6 @@ const StudentDashboard = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Welcome, {user?.name}
             </p>
-          </div>
-
-          {/* Notifications */}
-          <div className="px-6 mb-4">
-            <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <FiBell className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  {dashboardData.notifications.filter((n) => !n.read).length}{" "}
-                  new notifications
-                </span>
-              </div>
-            </div>
           </div>
 
           <nav className="mt-6">

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   FiActivity,
   FiBarChart2,
-  FiBell,
   FiBriefcase,
   FiCalendar,
   FiCheck,
@@ -75,7 +74,6 @@ const RecruiterDashboard = () => {
         skills: ["React", "Python", "AWS"],
         experience: "4 years",
         location: "Remote",
-        matchScore: 85,
         available: true,
       },
     ],
@@ -122,7 +120,6 @@ const RecruiterDashboard = () => {
           email: app.user?.email ?? "—",
           jobTitle: app.job?.title ?? "—",
           jobId: app.job?.id,
-          matchScore: 0,
           appliedDate: app.createdAt
             ? new Date(app.createdAt).toLocaleDateString()
             : "—",
@@ -552,9 +549,6 @@ const RecruiterDashboard = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium text-green-600">
-                    {app.matchScore}% match
-                  </div>
                   <div className="text-xs text-gray-500">{app.appliedDate}</div>
                 </div>
               </div>
@@ -1109,21 +1103,6 @@ const RecruiterDashboard = () => {
             <option>Interview</option>
             <option>Rejected</option>
           </select>
-          <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">
-              Match Score:
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              defaultValue="70"
-              className="flex-1"
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              70%+
-            </span>
-          </div>
           <input
             type="text"
             placeholder="Search candidates..."
@@ -1254,17 +1233,6 @@ const RecruiterDashboard = () => {
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {app.jobTitle}
-                          </div>
-                          <div className="flex items-center mt-1">
-                            <div className="text-sm font-medium text-green-600">
-                              {app.matchScore}%
-                            </div>
-                            <div className="ml-2 w-16 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-green-600 h-2 rounded-full"
-                                style={{ width: `${app.matchScore}%` }}
-                              ></div>
-                            </div>
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
                             Applied {app.appliedDate}
@@ -1467,17 +1435,6 @@ const RecruiterDashboard = () => {
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-green-600">
-                    {candidate.matchScore}% match
-                  </span>
-                  <div className="w-16 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-600 h-2 rounded-full"
-                      style={{ width: `${candidate.matchScore}%` }}
-                    ></div>
-                  </div>
-                </div>
                 <span
                   className={`px-2 py-1 text-xs rounded-full ${
                     candidate.available
@@ -1561,19 +1518,6 @@ const RecruiterDashboard = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Welcome back, {user?.name}
             </p>
-          </div>
-
-          {/* Notifications */}
-          <div className="px-6 mb-4">
-            <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <FiBell className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  {dashboardData.notifications.filter((n) => !n.read).length}{" "}
-                  new notifications
-                </span>
-              </div>
-            </div>
           </div>
 
           <nav className="mt-6">

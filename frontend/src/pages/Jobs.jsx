@@ -756,7 +756,6 @@ const Jobs = () => {
               : "Competitive",
           type: job.type,
           experience: job.experience,
-          matchScore: Math.floor(Math.random() * 20) + 80,
           posted: new Date(job.createdAt).toLocaleDateString(),
           dueDate: job.applicationDeadline
             ? new Date(job.applicationDeadline).toLocaleDateString()
@@ -1038,9 +1037,6 @@ const Jobs = () => {
                     </button>
                   )}
                   <div className="text-right">
-                    <div className="text-sm font-medium text-green-600">
-                      {job.matchScore}% match
-                    </div>
                     <div className="text-xs text-gray-500">{job.posted}</div>
                   </div>
                 </div>
