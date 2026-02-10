@@ -1,6 +1,6 @@
-# placeHub Frontend
+# PlaceHub Frontend
 
-React.js frontend application for the placeHub AI-powered career recommendation platform.
+React.js frontend application for the PlaceHub AI-powered career recommendation platform.
 
 ## 🚀 Features
 

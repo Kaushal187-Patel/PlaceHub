@@ -107,7 +107,7 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* placeHub Chat Button */}
+      {/* PlaceHub Chat Button */}
       <motion.div
         className="fixed bottom-6 right-6 z-50"
         whileHover={{ scale: 1.05 }}
@@ -127,7 +127,7 @@ const Chatbot = () => {
               animate={{ opacity: 1, x: 0 }}
               className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-lg"
             >
-              Chat with placeHub
+              Chat with PlaceHub
               <div className="absolute left-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-blue-600 border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
             </motion.div>
           )}
@@ -154,7 +154,7 @@ const Chatbot = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-white text-lg">
-                    placeHub
+                    PlaceHub
                   </h3>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     AI Career Assistant

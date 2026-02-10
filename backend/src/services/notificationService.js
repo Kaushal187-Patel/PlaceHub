@@ -65,11 +65,11 @@ class NotificationService {
         subject: subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">placeHub - Application Status Update</h2>
+            <h2 style="color: #333;">PlaceHub - Application Status Update</h2>
             <p>${message}</p>
             <hr>
             <p style="color: #666; font-size: 12px;">
-              This is an automated message from placeHub Career Platform.
+              This is an automated message from PlaceHub Career Platform.
             </p>
           </div>
         `

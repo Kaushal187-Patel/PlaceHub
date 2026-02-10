@@ -1,4 +1,4 @@
-# placeHub - AI-Powered Career Recommendation Platform
+# PlaceHub - AI-Powered Career Recommendation Platform
 
 Complete full-stack application with AI-powered career recommendations and job matching.
 

@@ -85,7 +85,7 @@ app.options('*', cors());
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'success',
-    message: 'placeHub API is running!',
+    message: 'PlaceHub API is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
   });

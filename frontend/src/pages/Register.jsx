@@ -35,7 +35,7 @@ const Register = () => {
     }
 
     if (isSuccess && user) {
-      toast.success(`Welcome to placeHub, ${user.name}!`);
+      toast.success(`Welcome to PlaceHub, ${user.name}!`);
 
       setTimeout(() => {
         window.location.href = "/";
@@ -84,7 +84,7 @@ const Register = () => {
             Create your account
           </h2>
           <p className="text-gray-600 mb-2">
-            Join placeHub and start your career journey
+            Join PlaceHub and start your career journey
           </p>
           <p className="text-sm text-gray-500">
             Already have an account?{" "}

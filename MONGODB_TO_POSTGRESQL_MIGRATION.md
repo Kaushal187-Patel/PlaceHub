@@ -1,6 +1,6 @@
 # MongoDB to PostgreSQL Migration Guide
 
-This document outlines the complete migration from MongoDB (Mongoose) to PostgreSQL (Sequelize) for the placeHub application.
+This document outlines the complete migration from MongoDB (Mongoose) to PostgreSQL (Sequelize) for the PlaceHub application.
 
 ## ✅ Completed Changes
 
@@ -22,6 +22,7 @@ This document outlines the complete migration from MongoDB (Mongoose) to Postgre
 All models have been converted from Mongoose schemas to Sequelize models:
 
 - ✅ **User** (`backend/src/models/User.js`)
+
   - UUID primary keys instead of ObjectId
   - JSONB for nested objects (experience, education, resumeAnalysis, uploadcareResume)
   - ARRAY type for skills
@@ -29,19 +30,23 @@ All models have been converted from Mongoose schemas to Sequelize models:
   - Hooks converted to Sequelize hooks
 
 - ✅ **Job** (`backend/src/models/Job.js`)
+
   - Foreign key: `recruiterId` (references users.id)
   - ARRAY type for skills
   - GIN indexes for array and text search
 
 - ✅ **Application** (`backend/src/models/Application.js`)
+
   - Foreign keys: `userId`, `jobId`, `resumeId`
   - Unique constraint on (userId, jobId)
 
 - ✅ **Resume** (`backend/src/models/Resume.js`)
+
   - JSONB for analysis data
   - Hook to ensure only one latest resume per user
 
 - ✅ **SavedJob** (`backend/src/models/SavedJob.js`)
+
   - Foreign keys: `userId`, `jobId`
   - Unique constraint on (userId, jobId)
 
@@ -59,6 +64,7 @@ All models have been converted from Mongoose schemas to Sequelize models:
 All controllers converted from Mongoose queries to Sequelize:
 
 - ✅ **users.js**:
+
   - `find()` → `findAll()` / `findAndCountAll()`
   - `findById()` → `findByPk()`
   - `findOne()` → `findOne()`
@@ -66,11 +72,13 @@ All controllers converted from Mongoose queries to Sequelize:
   - `$or`, `$regex` → `Op.or`, `Op.iLike`
 
 - ✅ **jobs.js**:
+
   - Array queries: `$in` → `Op.overlap` for PostgreSQL arrays
   - Date comparisons: `$gt` → `Op.gt`
   - Foreign key: `recruiter` → `recruiterId`
 
 - ✅ **applications.js**:
+
   - All queries converted to Sequelize
   - Includes for related models
 
@@ -91,6 +99,7 @@ All controllers converted from Mongoose queries to Sequelize:
 ### 8. Configuration Files
 
 - ✅ **app.js**:
+
   - Removed `express-mongo-sanitize`
   - Updated database connection import
   - Added models initialization
@@ -118,17 +127,17 @@ This will install:
 Create a `.env` file in the `backend` directory with:
 
 ```env
-DATABASE_URI=postgres://postgres:Kaushal%408697@127.0.0.1:5432/placeHub
+DATABASE_URI=postgres://postgres:Kaushal%408697@127.0.0.1:5432/PlaceHub
 ```
 
 **Note**: URL-encode special characters in passwords (e.g., `@` becomes `%40`)
 
 ### 3. Database Setup
 
-Make sure PostgreSQL is running and the database `placeHub` exists:
+Make sure PostgreSQL is running and the database `PlaceHub` exists:
 
 ```sql
-CREATE DATABASE placeHub;
+CREATE DATABASE PlaceHub;
 ```
 
 ### 4. Run Database Migrations
@@ -178,15 +187,18 @@ npx sequelize-cli migration:generate --name initial-schema
 ## 🚨 Breaking Changes
 
 1. **ID Format**: Changed from MongoDB ObjectId to UUID
+
    - All `_id` references now use `id`
    - Frontend may need updates if it hardcodes `_id`
 
 2. **Foreign Key Names**: Changed to camelCase with "Id" suffix
+
    - `recruiter` → `recruiterId`
    - `user` → `userId`
    - `job` → `jobId`
 
 3. **Query Syntax**: All queries must use Sequelize syntax
+
    - No more `.populate()` - use `include` instead
    - No more `.select()` - use `attributes` instead
 
@@ -204,14 +216,17 @@ npx sequelize-cli migration:generate --name initial-schema
    ```
 
 2. **Check Database Connection**:
+
    - Look for "📊 PostgreSQL Connected successfully" in console
    - Verify tables are created
 
 3. **Update Frontend** (if needed):
+
    - Change `_id` to `id` in API responses
    - Update foreign key field names if hardcoded
 
 4. **Data Migration** (if you have existing MongoDB data):
+
    - Export data from MongoDB
    - Transform ObjectIds to UUIDs
    - Transform field names (recruiter → recruiterId, etc.)

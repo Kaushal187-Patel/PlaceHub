@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">placeHub</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">PlaceHub</h3>
             <p className="text-gray-700 mb-4">
               AI-powered career recommendation platform helping students and job
               seekers discover their ideal career paths and connect with
@@ -99,7 +99,7 @@ const Footer = () => {
 
         <div className="border-t border-brand-300 mt-8 pt-8 text-center">
           <p className="text-gray-700">
-            © 2025 placeHub. All rights reserved. Built with ❤️ by the placeHub
+            © 2025 PlaceHub. All rights reserved. Built with ❤️ by the PlaceHub
             team.
           </p>
         </div>

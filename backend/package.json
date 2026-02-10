@@ -1,7 +1,7 @@
 {
   "name": "placementhub-backend",
   "version": "1.0.0",
-  "description": "Backend API for placeHub - AI-Powered Career Recommendation Platform",
+  "description": "Backend API for PlaceHub - AI-Powered Career Recommendation Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -22,7 +22,7 @@
     "express",
     "postgresql"
   ],
-  "author": "placeHub Team",
+  "author": "PlaceHub Team",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.2",

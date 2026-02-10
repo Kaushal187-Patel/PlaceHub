@@ -1,6 +1,6 @@
-# placeHub Project Setup Guide
+# PlaceHub Project Setup Guide
 
-Complete setup guide for the placeHub AI-Powered Career Recommendation Platform.
+Complete setup guide for the PlaceHub AI-Powered Career Recommendation Platform.
 
 ## 🚀 Quick Start
 
@@ -265,6 +265,7 @@ python train_models.py
    ```
 
 2. **Make Changes**
+
    - Frontend: Hot reload enabled
    - Backend: Nodemon auto-restart
    - ML Service: Manual restart needed

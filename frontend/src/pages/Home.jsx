@@ -261,7 +261,7 @@ const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               className="text-5xl font-extrabold text-gray-900 dark:text-white mb-6"
             >
-              Why Choose placeHub?
+              Why Choose PlaceHub?
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -356,7 +356,7 @@ const Home = () => {
           </h2>
           <p className="text-xl text-gray-700 mb-8">
             Join thousands of students and professionals who found their dream
-            careers with placeHub.
+            careers with PlaceHub.
           </p>
           <Link
             to={user ? "/career-recommendations" : "/register"}

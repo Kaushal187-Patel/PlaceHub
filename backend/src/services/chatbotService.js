@@ -243,7 +243,7 @@ What roles are you looking to strengthen in your organization?`;
 
   handlePlatformNavigation(message, userRole) {
     if (userRole === 'student') {
-      return `Here's how to navigate placeHub effectively:
+      return `Here's how to navigate PlaceHub effectively:
 
 🏠 **Dashboard**: View your career recommendations and progress
 📊 **Career Recommendations**: Get AI-powered career suggestions

@@ -285,7 +285,7 @@ const forgotPassword = async (req, res, next) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: 'placeHub - Password Reset Token',
+        subject: 'PlaceHub - Password Reset Token',
         message
       });
 

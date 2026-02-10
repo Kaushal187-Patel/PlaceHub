@@ -16,7 +16,7 @@ const TermsOfService = () => {
                 1. Acceptance of Terms
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                By accessing and using placeHub's services, you accept and agree
+                By accessing and using PlaceHub's services, you accept and agree
                 to be bound by the terms and provision of this agreement. If you
                 do not agree to abide by the above, please do not use this
                 service.
@@ -28,7 +28,7 @@ const TermsOfService = () => {
                 2. Description of Service
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                placeHub provides AI-powered career recommendation and job
+                PlaceHub provides AI-powered career recommendation and job
                 matching services, including:
               </p>
               <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2">
@@ -77,7 +77,7 @@ const TermsOfService = () => {
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
                 The service and its original content, features, and
-                functionality are owned by placeHub and are protected by
+                functionality are owned by PlaceHub and are protected by
                 international copyright, trademark, patent, trade secret, and
                 other intellectual property laws.
               </p>
@@ -100,7 +100,7 @@ const TermsOfService = () => {
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 The information, recommendations, and services provided by
-                placeHub are for informational purposes only. We make no
+                PlaceHub are for informational purposes only. We make no
                 guarantees about:
               </p>
               <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2">
@@ -116,7 +116,7 @@ const TermsOfService = () => {
                 8. Limitation of Liability
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                In no event shall placeHub be liable for any indirect,
+                In no event shall PlaceHub be liable for any indirect,
                 incidental, special, consequential, or punitive damages,
                 including without limitation, loss of profits, data, use,
                 goodwill, or other intangible losses.

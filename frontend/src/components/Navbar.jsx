@@ -40,12 +40,12 @@ const Navbar = () => {
             <Link to="/" className="flex-shrink-0 flex items-center">
               <img
                 src="/logo.png"
-                alt="placeHub"
+                alt="PlaceHub"
                 className="h-8 w-8 mr-2 rounded"
                 loading="eager"
               />
               <span className="text-2xl font-bold text-gray-900 dark:text-brand-200">
-                placeHub
+                PlaceHub
               </span>
             </Link>
           </div>
