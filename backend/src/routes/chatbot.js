@@ -1,11 +1,10 @@
 const express = require('express');
 const { sendMessage, clearSession } = require('../controllers/chatbot');
-const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Chatbot routes
-router.post('/message', protect, sendMessage);
-router.post('/clear-session', protect, clearSession);
+// Chatbot routes (no auth required so it always works)
+router.post('/message', sendMessage);
+router.post('/clear-session', clearSession);
 
 module.exports = router;

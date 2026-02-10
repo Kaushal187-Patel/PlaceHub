@@ -25,7 +25,9 @@ const Chatbot = () => {
       // Send welcome message when chatbot opens
       const welcomeMessage = {
         id: Date.now(),
-        text: `Hello ${user?.name || "there"}! 👋 I'm your AI career assistant. How can I help you today?`,
+        text: `Hello ${
+          user?.name || "there"
+        }! 👋 I'm your AI career assistant. How can I help you today?`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -52,16 +54,25 @@ const Chatbot = () => {
 
       const botMessage = {
         id: Date.now() + 1,
-        text: response.data.message,
+        text: response.message,
         sender: "bot",
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
+      // Local fallback response if the API call fails
+      const fallbackText =
+        "I'm having trouble connecting right now, but here's some quick career advice:\n\n" +
+        "• Keep your resume to 1–2 pages and focus on impact.\n" +
+        "• Tailor your resume and cover letter to each job.\n" +
+        "• Practice common interview questions out loud.\n" +
+        "• Keep learning new skills with small side projects.\n\n" +
+        "You can also try asking me again in a moment.";
+
       const errorMessage = {
         id: Date.now() + 1,
-        text: "I'm having trouble processing your request. Please try again.",
+        text: fallbackText,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -74,16 +85,18 @@ const Chatbot = () => {
   const clearChat = async () => {
     try {
       await chatbotService.clearSession();
-      setMessages([]);
+    } catch (error) {
+      console.error("Failed to clear session:", error);
+    } finally {
       const welcomeMessage = {
         id: Date.now(),
-        text: `Hello ${user?.name || "there"}! 👋 I'm your AI career assistant. How can I help you today?`,
+        text: `Hello ${
+          user?.name || "there"
+        }! 👋 I'm your AI career assistant. How can I help you today?`,
         sender: "bot",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
-    } catch (error) {
-      console.error("Failed to clear session:", error);
     }
   };
 
@@ -175,7 +188,9 @@ const Chatbot = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
                 >
                   <div
                     className={`max-w-[80%] p-3 rounded-lg ${

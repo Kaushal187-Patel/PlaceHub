@@ -102,7 +102,7 @@ const Home = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  to={user ? "/resume-dashboard" : "/register"}
+                  to={user ? "/resume-analyzer" : "/register"}
                   className="group bg-brand-300 text-gray-900 px-8 py-3 rounded-xl font-semibold text-lg hover:bg-brand-200 transition-all duration-300 inline-flex items-center justify-center shadow-lg"
                 >
                   <FiUpload className="mr-2" /> Upload Resume
