@@ -33,6 +33,16 @@ const Application = sequelize.define('Application', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  experience: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'experience'
+  },
+  currentJob: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'current_job'
+  },
   resumeId: {
     type: DataTypes.UUID,
     allowNull: true,

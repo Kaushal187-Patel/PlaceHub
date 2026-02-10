@@ -1,4 +1,5 @@
 const { Application, Job, Resume, User } = require('../models');
+const { Op } = require('sequelize');
 const emailNotificationService = require('../services/emailNotificationService');
 
 // @desc    Apply for a job
@@ -13,13 +14,22 @@ const applyForJob = async (req, res) => {
     });
 
     const { jobId } = req.params;
-    const { coverLetter } = req.body;
+    const { coverLetter, experience, currentJob, resumeId } = req.body;
     const userId = req.user.id;
 
-    if (!jobId) {
+    if (!jobId || jobId === 'undefined') {
       return res.status(400).json({
         status: 'error',
         message: 'Job ID is required'
+      });
+    }
+
+    // Validate UUID format to avoid DB errors
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(jobId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid job ID format'
       });
     }
 
@@ -63,25 +73,32 @@ const applyForJob = async (req, res) => {
       });
     }
 
-    // Get user's latest resume (optional)
-    const latestResume = await Resume.findOne({
-      where: {
-        userId: userId,
-        isLatest: true
-      }
-    });
-    console.log('Latest resume found:', latestResume ? 'Yes' : 'No');
+    // Use provided resumeId or user's latest resume
+    let resumeToUse = null;
+    if (resumeId) {
+      resumeToUse = await Resume.findOne({
+        where: { id: resumeId, userId }
+      });
+    }
+    if (!resumeToUse) {
+      resumeToUse = await Resume.findOne({
+        where: { userId, isLatest: true }
+      });
+    }
+    console.log('Resume for application:', resumeToUse ? 'Yes' : 'No');
 
     // Create application
     const applicationData = {
       userId: userId,
       jobId: jobId,
       coverLetter: coverLetter || '',
+      experience: experience || null,
+      currentJob: currentJob || null,
       status: 'pending'
     };
 
-    if (latestResume) {
-      applicationData.resumeId = latestResume.id;
+    if (resumeToUse) {
+      applicationData.resumeId = resumeToUse.id;
     }
 
     console.log('Creating application with data:', applicationData);
@@ -150,13 +167,21 @@ const getUserApplications = async (req, res) => {
   }
 };
 
-// Placeholder functions for existing routes
-// @desc    Get all applications (Recruiter only)
-// @route   GET /api/applications/all
-// @access  Private (Recruiter only)
+// @desc    Get all applications for recruiter's jobs
+// @route   GET /api/applications
+// @access  Private (Recruiter/Admin only)
 const getApplications = async (req, res) => {
   try {
-    const applications = await Application.findAll({
+    if (!req.user?.id) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Not authorized',
+        error: 'User not found'
+      });
+    }
+
+    const recruiterId = req.user.id;
+    let applications = await Application.findAll({
       include: [
         {
           model: User,
@@ -166,11 +191,43 @@ const getApplications = async (req, res) => {
         {
           model: Job,
           as: 'job',
-          attributes: ['id', 'title', 'company']
+          attributes: ['id', 'title', 'company', 'location', 'skills'],
+          where: { recruiterId },
+          required: true
         }
       ],
       order: [['createdAt', 'DESC']]
+    }).catch((err) => {
+      console.warn('Get applications with includes failed:', err.message);
+      return null;
     });
+
+    if (applications === null) {
+      applications = await Application.findAll({
+        include: [
+          {
+            model: Job,
+            as: 'job',
+            attributes: ['id', 'title', 'company'],
+            where: { recruiterId },
+            required: true
+          }
+        ],
+        order: [['createdAt', 'DESC']]
+      }).catch(() => []);
+      const userIds = [...new Set(applications.map((a) => a.userId))];
+      const users = userIds.length
+        ? await User.findAll({
+            where: { id: { [Op.in]: userIds } },
+            attributes: ['id', 'name', 'email', 'phone']
+          })
+        : [];
+      const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
+      applications = applications.map((app) => {
+        const u = userMap[app.userId];
+        return { ...app.toJSON(), user: u || null };
+      });
+    }
 
     res.status(200).json({
       status: 'success',

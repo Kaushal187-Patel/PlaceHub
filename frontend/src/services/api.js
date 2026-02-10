@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// In dev without VITE_API_URL, use relative /api so Vite proxy forwards to backend (default backend port 5001)
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:5001/api');
 const ML_API_URL = import.meta.env.VITE_ML_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({

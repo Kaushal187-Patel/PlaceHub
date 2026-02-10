@@ -14,7 +14,9 @@ const getMyJobs = async () => {
     const response = await api.get('/jobs/my-jobs');
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to fetch jobs');
+    const msg = error.response?.data?.message || error.response?.data?.error || error.message;
+    const detail = error.response?.data?.error ? `${error.response.data.message || 'Failed to fetch jobs'}: ${error.response.data.error}` : msg;
+    throw new Error(detail || 'Failed to fetch jobs. Is the backend running? (default port 5001)');
   }
 };
 

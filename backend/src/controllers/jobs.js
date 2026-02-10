@@ -69,14 +69,34 @@ const createJob = async (req, res) => {
 // @access  Private (Recruiter only)
 const getMyJobs = async (req, res) => {
   try {
-    const jobs = await Job.findAll({
+    if (!req.user?.id) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Not authorized',
+        error: 'User not found'
+      });
+    }
+
+    let jobs = await Job.findAll({
       where: { recruiterId: req.user.id },
       include: [{
         model: Application,
-        as: 'applications'
+        as: 'applications',
+        required: false,
+        attributes: ['id']
       }],
       order: [['createdAt', 'DESC']]
+    }).catch((err) => {
+      console.warn('Get my jobs with applications failed, retrying without include:', err.message);
+      return null;
     });
+
+    if (jobs === null) {
+      jobs = await Job.findAll({
+        where: { recruiterId: req.user.id },
+        order: [['createdAt', 'DESC']]
+      });
+    }
 
     // Group jobs by status for better organization
     const jobsByStatus = {
@@ -236,12 +256,22 @@ const closeJob = async (req, res) => {
   }
 };
 
+// Validate UUID format to avoid DB errors from invalid ids (e.g. "undefined")
+const isValidUUID = (id) => id && id !== 'undefined' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
 // @desc    Pause/Resume job
 // @route   PUT /api/jobs/:id/toggle-status
 // @access  Private (Recruiter only)
 const toggleJobStatus = async (req, res) => {
   try {
-    const job = await Job.findByPk(req.params.id);
+    const jobId = req.params.id;
+    if (!isValidUUID(jobId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid job ID'
+      });
+    }
+    const job = await Job.findByPk(jobId);
 
     if (!job) {
       return res.status(404).json({
@@ -317,6 +347,13 @@ const deleteJob = async (req, res) => {
 // @access  Private (Recruiter only)
 const updateJobStatus = async (req, res) => {
   try {
+    const jobId = req.params.id;
+    if (!isValidUUID(jobId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid job ID'
+      });
+    }
     const { status } = req.body;
     const validStatuses = ['active', 'paused', 'closed', 'draft'];
     
@@ -327,7 +364,7 @@ const updateJobStatus = async (req, res) => {
       });
     }
 
-    const job = await Job.findByPk(req.params.id);
+    const job = await Job.findByPk(jobId);
 
     if (!job) {
       return res.status(404).json({
