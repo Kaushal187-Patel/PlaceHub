@@ -11,6 +11,13 @@ import {
 } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import ApplyJobModal from "../components/ApplyJobModal";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+} from "../components/ui/Modal";
 import jobService from "../services/jobService";
 import userService from "../services/userService";
 
@@ -28,6 +35,9 @@ const Jobs = () => {
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [jobToApply, setJobToApply] = useState(null);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [showJobDetails, setShowJobDetails] = useState(false);
 
   // Comprehensive worldwide locations database
   const worldwideLocations = [
@@ -871,6 +881,10 @@ const Jobs = () => {
   }, []);
 
   const filteredJobs = jobs.filter((job) => {
+    // If showing saved only, filter by saved jobs
+    if (showSavedOnly && !savedJobs.includes(job.id)) {
+      return false;
+    }
     return (
       (!filters.search ||
         job.title.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -897,13 +911,32 @@ const Jobs = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Find Your Dream Job
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Discover opportunities that match your skills and interests
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {showSavedOnly ? "Saved Jobs" : "Find Your Dream Job"}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {showSavedOnly
+                ? `You have ${savedJobs.length} saved job${
+                    savedJobs.length !== 1 ? "s" : ""
+                  }`
+                : "Discover opportunities that match your skills and interests"}
+            </p>
+          </div>
+          {user && (
+            <button
+              onClick={() => setShowSavedOnly(!showSavedOnly)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                showSavedOnly
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+              }`}
+            >
+              <FiBookmark className="inline h-4 w-4 mr-2" />
+              {showSavedOnly ? "Show All Jobs" : `Saved (${savedJobs.length})`}
+            </button>
+          )}
         </div>
 
         {/* Filters */}
@@ -1074,7 +1107,14 @@ const Jobs = () => {
                 >
                   {job.daysLeft <= 0 ? "Application Closed" : "Apply Now"}
                 </button>
-                <button className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg text-sm">
+                <button
+                  onClick={() => {
+                    setSelectedJob(job);
+                    setShowJobDetails(true);
+                  }}
+                  className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg text-sm"
+                  title="View Job Details"
+                >
                   <FiEye className="h-4 w-4" />
                 </button>
               </div>
@@ -1096,6 +1136,130 @@ const Jobs = () => {
         )}
       </div>
 
+      {/* Job Details Modal */}
+      <Modal open={showJobDetails} onOpenChange={setShowJobDetails}>
+        <ModalContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <ModalHeader>
+            <ModalTitle className="text-gray-900 dark:text-white">
+              {selectedJob?.title}
+            </ModalTitle>
+            {selectedJob?.company && (
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                {selectedJob.company}
+              </p>
+            )}
+          </ModalHeader>
+          <ModalBody>
+            {selectedJob && (
+              <div className="space-y-6">
+                {/* Job Info */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <FiMapPin className="h-4 w-4" />
+                    <span className="text-sm">{selectedJob.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <FiBriefcase className="h-4 w-4" />
+                    <span className="text-sm">{selectedJob.type}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <FiDollarSign className="h-4 w-4" />
+                    <span className="text-sm">{selectedJob.salary}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <FiClock className="h-4 w-4" />
+                    <span className="text-sm">{selectedJob.experience}</span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Job Description
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {selectedJob.description}
+                  </p>
+                </div>
+
+                {/* Skills */}
+                {selectedJob.skills && selectedJob.skills.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Required Skills
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedJob.skills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm rounded-full"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Due Date */}
+                {selectedJob.dueDate && (
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <FiClock className="h-4 w-4" />
+                    <span className="text-sm">
+                      Apply by: {selectedJob.dueDate}
+                      {selectedJob.daysLeft !== undefined && (
+                        <span className="ml-2">
+                          ({selectedJob.daysLeft} days left)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => {
+                      setShowJobDetails(false);
+                      setJobToApply(selectedJob);
+                      setApplyModalOpen(true);
+                    }}
+                    disabled={selectedJob.daysLeft <= 0}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium ${
+                      selectedJob.daysLeft <= 0
+                        ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    {selectedJob.daysLeft <= 0
+                      ? "Application Closed"
+                      : "Apply Now"}
+                  </button>
+                  {user && (
+                    <button
+                      onClick={() => handleSaveJob(selectedJob.id)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        savedJobs.includes(selectedJob.id)
+                          ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900"
+                          : "text-gray-400 hover:text-yellow-500 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                      title={
+                        savedJobs.includes(selectedJob.id)
+                          ? "Unsave job"
+                          : "Save job"
+                      }
+                    >
+                      <FiBookmark className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Apply Job Modal */}
       <ApplyJobModal
         open={applyModalOpen}
         onOpenChange={setApplyModalOpen}

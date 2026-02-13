@@ -238,10 +238,27 @@ const getApplications = async (req, res) => {
         : [];
       const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
       applications = applications.map((app) => {
-        const u = userMap[app.userId];
-        return { ...app.toJSON(), user: u || null };
+        const appData = app.toJSON ? app.toJSON() : app;
+        const u = userMap[appData.userId];
+        const result = { ...appData, user: u || null };
+        // Ensure resumeId is set if resume exists but resumeId is null
+        if (result.resume && result.resume.id && !result.resumeId) {
+          result.resumeId = result.resume.id;
+        }
+        return result;
       });
     }
+
+    // Ensure resumeId is set if resume exists but resumeId is null
+    applications = applications.map((app) => {
+      const appData = app.toJSON ? app.toJSON() : app;
+      // If resume exists but resumeId is null/undefined, set it from resume.id
+      if (appData.resume && appData.resume.id && !appData.resumeId) {
+        appData.resumeId = appData.resume.id;
+        console.log(`Fixed resumeId for application ${appData.id}: ${appData.resumeId}`);
+      }
+      return appData;
+    });
 
     // Log resume data for debugging
     console.log('Applications fetched:', applications.length);

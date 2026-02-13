@@ -206,12 +206,88 @@ const RecruiterDashboard = () => {
       applicationId: application.id,
       resumeId: application.resumeId,
       resume: application.resume,
+      resumeIdFromResume: application.resume?.id,
       candidateEmail: application.email,
+      fullApplication: application,
     });
 
-    const resumeId = application.resumeId || application.resume?.id;
+    // Try multiple ways to get resumeId
+    const resumeId =
+      application.resumeId ||
+      application.resume?.id ||
+      (application.resume &&
+        typeof application.resume === "object" &&
+        application.resume.id) ||
+      null;
+
+    // Also check if resume object exists but id might be in a different format
+    if (!resumeId && application.resume) {
+      console.warn("Resume object exists but no ID found:", application.resume);
+      // Try to extract ID from resume object keys
+      const possibleId =
+        application.resume.id ||
+        application.resume.resumeId ||
+        application.resume._id;
+      if (possibleId) {
+        console.log("Found resume ID from resume object:", possibleId);
+        // Continue with this ID
+        const finalResumeId = possibleId;
+        // Proceed with download using finalResumeId
+        try {
+          const userStr = localStorage.getItem("user");
+          const user = userStr ? JSON.parse(userStr) : null;
+          const token = user?.token;
+
+          if (!token) {
+            alert("Please log in to view resumes.");
+            return;
+          }
+
+          const response = await fetch(`/api/resume/${finalResumeId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download =
+              application.resumeFilename ||
+              application.resume?.originalName ||
+              application.resume?.filename ||
+              `resume_${application.candidateName || "candidate"}.pdf`;
+            link.target = "_blank";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Resume download error:", errorData);
+            alert(
+              errorData.message ||
+                "Resume not available. The file may have been removed from the server.",
+            );
+            return;
+          }
+        } catch (error) {
+          console.error("Error viewing resume:", error);
+          alert("Failed to load resume. Please try again or contact support.");
+          return;
+        }
+      }
+    }
 
     if (!resumeId) {
+      console.error("No resume ID found. Application data:", {
+        resumeId: application.resumeId,
+        resume: application.resume,
+        hasResumeObject: !!application.resume,
+      });
       alert(
         "No resume available for this application. The candidate may not have uploaded a resume when applying.",
       );
