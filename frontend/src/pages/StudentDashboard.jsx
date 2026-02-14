@@ -28,6 +28,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import ApplyJobModal from "../components/ApplyJobModal";
 import applicationService from "../services/applicationService";
+import chatbotService from "../services/chatbotService";
 import dashboardService from "../services/dashboardService";
 import jobService from "../services/jobService";
 import resumeService from "../services/resumeService";
@@ -57,6 +58,9 @@ const StudentDashboard = () => {
     salary: "",
     experience: "",
   });
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -1288,6 +1292,355 @@ const StudentDashboard = () => {
     </div>
   );
 
+  const renderSavedItems = () => {
+    const saved = dashboardData.savedJobs || [];
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Saved Items
+          </h2>
+          <button
+            onClick={() => setActiveTab("jobs")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          >
+            <FiSearch className="h-4 w-4" />
+            <span>Browse more jobs</span>
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Jobs and items you saved for later. Click Apply to submit your application.
+        </p>
+        {saved.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {saved.map((job) => (
+              <div
+                key={job.id || job._id}
+                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      {job.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {job.company}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {job.location} · {job.type}
+                    </p>
+                  </div>
+                  <FiBookmark className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                </div>
+                {job.skills?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {job.skills.slice(0, 3).map((skill, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleApplyJob(job)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("jobs")}
+                    className="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white px-3 py-2 rounded-lg text-sm"
+                  >
+                    View
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-sm border text-center">
+            <FiBookmark className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No saved items yet
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Save jobs from the Job Board to find them here later.
+            </p>
+            <button
+              onClick={() => setActiveTab("jobs")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+            >
+              Go to Job Board
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCareerProgress = () => {
+    const stats = dashboardData.progressStats || {};
+    const applications = dashboardData.applications || [];
+    const totalApps = stats.totalApplications ?? applications.length;
+    const interviews = stats.interviewCalls ?? applications.filter((a) => a.status === "interview").length;
+    const hired = stats.jobOffers ?? applications.filter((a) => a.status === "hired").length;
+    const score = stats.resumeScore ?? dashboardData.resumeAnalysis?.score ?? 0;
+    const skillsCount = stats.skillsCount ?? dashboardData.profile?.skills?.length ?? 0;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Career Progress
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Track your applications, interviews, and profile strength.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Applications sent</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalApps}</p>
+              </div>
+              <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
+                <FiBriefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Interviews</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{interviews}</p>
+              </div>
+              <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
+                <FiMessageCircle className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Resume score</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{score}%</p>
+              </div>
+              <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
+                <FiFileText className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Skills listed</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{skillsCount}</p>
+              </div>
+              <div className="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full">
+                <FiStar className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Application pipeline
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Pending</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {applications.filter((a) => a.status === "pending").length}
+              </span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Shortlisted / Interview</span>
+              <span className="font-medium text-gray-900 dark:text-white">{interviews}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Hired</span>
+              <span className="font-medium text-gray-900 dark:text-white">{hired}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAIMentorChat = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          AI Mentor Chat
+        </h2>
+        <button
+          onClick={async () => {
+            try {
+              await chatbotService.clearSession();
+              setChatMessages([]);
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm"
+        >
+          Clear chat
+        </button>
+      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Ask for career advice, resume tips, job search help, or interview preparation.
+      </p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col min-h-[400px]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[280px]">
+          {chatMessages.length === 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-6">
+              Say hello or ask a question to get started.
+            </p>
+          )}
+          {chatMessages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
+                }`}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
+        </div>
+        <form
+          className="p-4 border-t border-gray-200 dark:border-gray-700"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const text = chatInput.trim();
+            if (!text || chatSending) return;
+            setChatInput("");
+            setChatMessages((prev) => [...prev, { role: "user", content: text }]);
+            setChatSending(true);
+            try {
+              const res = await chatbotService.sendMessage(text);
+              const reply = res?.message ?? res?.data?.message ?? res?.data?.response ?? res?.response ?? "I couldn’t process that. Try rephrasing.";
+              setChatMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+            } catch (err) {
+              setChatMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: "Sorry, I’m unable to respond right now. Please try again later." },
+              ]);
+            } finally {
+              setChatSending(false);
+            }
+          }}
+        >
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask about careers, resume, or jobs..."
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              disabled={chatSending}
+            />
+            <button
+              type="submit"
+              disabled={chatSending}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg"
+            >
+              {chatSending ? "Sending…" : "Send"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Settings
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Manage your account and preferences.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Profile
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <input
+                type="text"
+                defaultValue={dashboardData.profile?.name || user?.name}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input
+                type="email"
+                defaultValue={dashboardData.profile?.email || user?.email}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+              <input
+                type="text"
+                defaultValue={dashboardData.profile?.location}
+                placeholder="City, Country"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+              <textarea
+                defaultValue={dashboardData.profile?.bio}
+                rows={3}
+                placeholder="Short bio"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <button type="button" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+              Save profile
+            </button>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Notifications
+          </h3>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-700 dark:text-gray-300">Application updates</span>
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 dark:border-gray-600" />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-700 dark:text-gray-300">Job recommendations</span>
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 dark:border-gray-600" />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-700 dark:text-gray-300">Weekly digest</span>
+              <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
@@ -1301,29 +1654,13 @@ const StudentDashboard = () => {
       case "applications":
         return renderApplications();
       case "saved":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Saved Items - Coming Soon
-          </div>
-        );
+        return renderSavedItems();
       case "progress":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Career Progress - Coming Soon
-          </div>
-        );
+        return renderCareerProgress();
       case "chat":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            AI Mentor Chat - Coming Soon
-          </div>
-        );
+        return renderAIMentorChat();
       case "settings":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Settings - Coming Soon
-          </div>
-        );
+        return renderSettings();
       default:
         return renderOverview();
     }

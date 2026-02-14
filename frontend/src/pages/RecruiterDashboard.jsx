@@ -120,11 +120,9 @@ const RecruiterDashboard = () => {
     { id: "overview", label: "Overview", icon: FiTrendingUp },
     { id: "jobs", label: "Job Management", icon: FiBriefcase },
     { id: "applicants", label: "Applicant Tracking", icon: FiUsers },
-    { id: "candidates", label: "Talent Search", icon: FiSearch },
     { id: "analytics", label: "Analytics & Reports", icon: FiBarChart2 },
     { id: "messages", label: "Communication", icon: FiMessageSquare },
     { id: "profile", label: "Profile & Team", icon: FiUser },
-    { id: "billing", label: "Billing & Plans", icon: FiCreditCard },
     { id: "settings", label: "Settings", icon: FiSettings },
   ];
 
@@ -748,25 +746,6 @@ const RecruiterDashboard = () => {
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Create a new job posting
-              </p>
-            </div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("candidates")}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow text-left"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-              <FiSearch className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Search Talent
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Find qualified candidates
               </p>
             </div>
           </div>
@@ -2208,16 +2187,12 @@ const RecruiterDashboard = () => {
         return renderJobManagement();
       case "applicants":
         return renderApplicantTracking();
-      case "candidates":
-        return renderTalentSearch();
       case "analytics":
         return renderAnalytics();
       case "messages":
         return renderCommunicationHub();
       case "profile":
         return renderProfileTeam();
-      case "billing":
-        return renderBilling();
       case "settings":
         return renderSettings();
       default:
