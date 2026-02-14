@@ -6,7 +6,8 @@ const {
   deleteApplication,
   getMyApplications,
   withdrawApplication,
-  applyForJob
+  applyForJob,
+  scheduleInterview
 } = require('../controllers/applications');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -36,5 +37,8 @@ router.route('/:id')
 
 router.route('/:id/status')
   .put(authorize('recruiter', 'admin'), updateApplication);
+
+router.route('/:id/schedule-interview')
+  .put(authorize('recruiter', 'admin'), scheduleInterview);
 
 module.exports = router;

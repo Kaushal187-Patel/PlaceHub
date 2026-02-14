@@ -4,6 +4,8 @@ const Application = require('./Application');
 const Resume = require('./Resume');
 const SavedJob = require('./SavedJob');
 const Notification = require('./Notification');
+const Conversation = require('./Conversation');
+const Message = require('./Message');
 
 // Define associations
 // User associations
@@ -36,11 +38,26 @@ SavedJob.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Notification.belongsTo(Application, { foreignKey: 'applicationId', as: 'application' });
 
+// Conversation associations (recruiter <-> candidate, optionally linked to application)
+Conversation.belongsTo(User, { foreignKey: 'recruiterId', as: 'recruiter' });
+Conversation.belongsTo(User, { foreignKey: 'candidateId', as: 'candidate' });
+Conversation.belongsTo(Application, { foreignKey: 'applicationId', as: 'application' });
+Conversation.hasMany(Message, { foreignKey: 'conversationId', as: 'messages' });
+User.hasMany(Conversation, { foreignKey: 'recruiterId', as: 'recruiterConversations' });
+User.hasMany(Conversation, { foreignKey: 'candidateId', as: 'candidateConversations' });
+Application.hasOne(Conversation, { foreignKey: 'applicationId', as: 'conversation' });
+
+// Message associations
+Message.belongsTo(Conversation, { foreignKey: 'conversationId', as: 'conversation' });
+Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
+
 module.exports = {
   User,
   Job,
   Application,
   Resume,
   SavedJob,
-  Notification
+  Notification,
+  Conversation,
+  Message
 };

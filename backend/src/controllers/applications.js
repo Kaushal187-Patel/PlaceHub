@@ -361,6 +361,75 @@ const updateApplication = async (req, res) => {
   }
 };
 
+// @desc    Schedule interview: set date/time, update status to interview, send email to student
+// @route   PUT /api/applications/:id/schedule-interview
+// @access  Private (Recruiter/Admin)
+const scheduleInterview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { scheduledAt, notes } = req.body;
+
+    if (!scheduledAt) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'scheduledAt (date and time) is required'
+      });
+    }
+
+    const application = await Application.findByPk(id, {
+      include: [
+        { model: User, as: 'user' },
+        { model: Job, as: 'job' }
+      ]
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Application not found'
+      });
+    }
+
+    const scheduledDate = new Date(scheduledAt);
+    if (isNaN(scheduledDate.getTime())) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid date/time format for scheduledAt'
+      });
+    }
+
+    application.status = 'interview';
+    application.interviewScheduledAt = scheduledDate;
+    application.interviewNotes = notes || null;
+    await application.save();
+
+    emailNotificationService.sendInterviewScheduledEmail(
+      application.user,
+      application.job,
+      application.interviewScheduledAt,
+      application.interviewNotes || ''
+    ).catch((err) => console.error('Interview email failed:', err));
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Interview scheduled and email sent to candidate',
+      data: {
+        id: application.id,
+        status: application.status,
+        interviewScheduledAt: application.interviewScheduledAt,
+        interviewNotes: application.interviewNotes
+      }
+    });
+  } catch (error) {
+    console.error('Schedule interview error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to schedule interview',
+      error: error.message
+    });
+  }
+};
+
 const deleteApplication = (req, res) => {
   res.json({ message: 'Delete application - placeholder' });
 };
@@ -415,5 +484,6 @@ module.exports = {
   deleteApplication,
   getMyApplications,
   withdrawApplication,
-  applyForJob
+  applyForJob,
+  scheduleInterview
 };

@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import JobDeadlineExtension from "../components/JobDeadlineExtension";
 import applicationService from "../services/applicationService";
 import jobService from "../services/jobService";
+import messageService from "../services/messageService";
 
 const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -54,6 +55,26 @@ const RecruiterDashboard = () => {
   const [applicationsLoading, setApplicationsLoading] = useState(true);
   const [jobsError, setJobsError] = useState(null);
   const [applicationsError, setApplicationsError] = useState(null);
+
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageModalConversation, setMessageModalConversation] = useState(null);
+  const [messageModalMessages, setMessageModalMessages] = useState([]);
+  const [messageModalLoading, setMessageModalLoading] = useState(false);
+  const [messageInputValue, setMessageInputValue] = useState("");
+  const [messageSending, setMessageSending] = useState(false);
+
+  const [hubConversations, setHubConversations] = useState([]);
+  const [hubSelectedId, setHubSelectedId] = useState(null);
+  const [hubMessages, setHubMessages] = useState([]);
+  const [hubLoading, setHubLoading] = useState(false);
+  const [hubMessageInput, setHubMessageInput] = useState("");
+  const [hubSending, setHubSending] = useState(false);
+
+  const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [interviewModalApplication, setInterviewModalApplication] = useState(null);
+  const [interviewDateTime, setInterviewDateTime] = useState("");
+  const [interviewNotes, setInterviewNotes] = useState("");
+  const [interviewSubmitting, setInterviewSubmitting] = useState(false);
 
   const [dashboardData, setDashboardData] = useState({
     stats: {
@@ -342,16 +363,70 @@ const RecruiterDashboard = () => {
     await handleApplicationStatusChange(applicationId, "shortlisted");
   };
 
-  const handleScheduleInterview = async (applicationId) => {
-    await handleApplicationStatusChange(applicationId, "interview");
+  const handleScheduleInterview = (application) => {
+    setInterviewModalApplication(application);
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 1);
+    defaultDate.setHours(10, 0, 0, 0);
+    setInterviewDateTime(defaultDate.toISOString().slice(0, 16));
+    setInterviewNotes("");
+    setShowInterviewModal(true);
   };
 
-  const handleSendMessage = (application) => {
-    alert(
-      `Messaging feature coming soon! Contact ${
-        application.email || application.candidateName
-      }`,
-    );
+  const handleInterviewModalSubmit = async (e) => {
+    e.preventDefault();
+    if (!interviewModalApplication?.id || !interviewDateTime.trim() || interviewSubmitting) return;
+    setInterviewSubmitting(true);
+    try {
+      await applicationService.scheduleInterview(interviewModalApplication.id, {
+        scheduledAt: new Date(interviewDateTime).toISOString(),
+        notes: interviewNotes.trim() || undefined
+      });
+      setShowInterviewModal(false);
+      setInterviewModalApplication(null);
+      await fetchApplications();
+      alert("Interview scheduled and confirmation email sent to the candidate.");
+    } catch (err) {
+      alert(err.message || "Failed to schedule interview.");
+    } finally {
+      setInterviewSubmitting(false);
+    }
+  };
+
+  const handleSendMessage = async (application) => {
+    setMessageModalLoading(true);
+    setShowMessageModal(true);
+    setMessageModalConversation(null);
+    setMessageModalMessages([]);
+    setMessageInputValue("");
+    try {
+      const conversation = await messageService.getOrCreateConversation(application.id);
+      setMessageModalConversation(conversation);
+      const full = await messageService.getConversationWithMessages(conversation.id);
+      setMessageModalMessages(full.messages || []);
+    } catch (err) {
+      console.error("Failed to open conversation:", err);
+      alert(err.message || "Failed to open conversation.");
+      setShowMessageModal(false);
+    } finally {
+      setMessageModalLoading(false);
+    }
+  };
+
+  const handleSendMessageInModal = async (e) => {
+    e.preventDefault();
+    const body = messageInputValue.trim();
+    if (!body || !messageModalConversation?.id || messageSending) return;
+    setMessageSending(true);
+    try {
+      const msg = await messageService.sendMessage(messageModalConversation.id, body);
+      setMessageModalMessages((prev) => [...prev, msg]);
+      setMessageInputValue("");
+    } catch (err) {
+      alert(err.message || "Failed to send message.");
+    } finally {
+      setMessageSending(false);
+    }
   };
 
   const handleReject = async (applicationId) => {
@@ -428,6 +503,41 @@ const RecruiterDashboard = () => {
     checkExtensionRequired();
   }, []);
 
+  useEffect(() => {
+    if (activeTab !== "messages") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await messageService.getConversations();
+        if (!cancelled) setHubConversations(list);
+      } catch (err) {
+        if (!cancelled) console.error("Failed to load conversations:", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!hubSelectedId) {
+      setHubMessages([]);
+      return;
+    }
+    let cancelled = false;
+    setHubLoading(true);
+    messageService
+      .getConversationWithMessages(hubSelectedId)
+      .then((data) => {
+        if (!cancelled) setHubMessages(data.messages || []);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error("Failed to load messages:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setHubLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [hubSelectedId]);
+
   const checkExtensionRequired = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -442,7 +552,10 @@ const RecruiterDashboard = () => {
         setShowExtensionPopup(true);
       }
     } catch (error) {
-      console.error("Error checking extension requirements:", error);
+      // Backend not running or network error — skip extension popup silently
+      if (error?.code !== "ECONNREFUSED" && error?.message !== "Failed to fetch") {
+        console.error("Error checking extension requirements:", error);
+      }
     }
   };
 
@@ -1474,7 +1587,7 @@ const RecruiterDashboard = () => {
                             <FiCheck className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleScheduleInterview(app.id)}
+                            onClick={() => handleScheduleInterview(app)}
                             className="text-purple-600 hover:text-purple-700"
                             title="Schedule Interview"
                           >
@@ -1633,6 +1746,460 @@ const RecruiterDashboard = () => {
     </div>
   );
 
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Analytics & Reports
+        </h2>
+        <div className="flex items-center space-x-2">
+          <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            <option>Last 7 days</option>
+            <option>Last 30 days</option>
+            <option>Last 90 days</option>
+          </select>
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+            <FiDownload className="h-4 w-4" />
+            <span>Export Report</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Job Views</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {dashboardData.jobs.reduce((sum, j) => sum + (j.views ?? 0), 0)}
+              </p>
+            </div>
+            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
+              <FiEye className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Applications Received</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {dashboardData.stats.totalApplications}
+              </p>
+            </div>
+            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
+              <FiUsers className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Shortlisted</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {dashboardData.stats.shortlisted}
+              </p>
+            </div>
+            <div className="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full">
+              <FiStar className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Hired</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {dashboardData.stats.hired}
+              </p>
+            </div>
+            <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
+              <FiCheck className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Applications by Job
+          </h3>
+          <div className="space-y-3">
+            {dashboardData.jobs.slice(0, 5).map((job) => (
+              <div key={job.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{job.title}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{job.applications ?? 0} applications</span>
+              </div>
+            ))}
+            {dashboardData.jobs.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No job data yet.</p>
+            )}
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Pipeline Summary
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Pending review</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {dashboardData.applications.filter((a) => a.status === "pending").length}
+              </span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Shortlisted</span>
+              <span className="font-medium text-gray-900 dark:text-white">{dashboardData.stats.shortlisted}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Interview stage</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {dashboardData.applications.filter((a) => a.status === "interview").length}
+              </span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <span className="text-gray-700 dark:text-gray-300">Hired</span>
+              <span className="font-medium text-gray-900 dark:text-white">{dashboardData.stats.hired}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const handleSendMessageInHub = async (e) => {
+    e.preventDefault();
+    const body = hubMessageInput.trim();
+    if (!body || !hubSelectedId || hubSending) return;
+    setHubSending(true);
+    try {
+      const msg = await messageService.sendMessage(hubSelectedId, body);
+      setHubMessages((prev) => [...prev, msg]);
+      setHubMessageInput("");
+    } catch (err) {
+      alert(err.message || "Failed to send message.");
+    } finally {
+      setHubSending(false);
+    }
+  };
+
+  const renderCommunicationHub = () => {
+    const selectedConv = hubConversations.find((c) => c.id === hubSelectedId);
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Communication Hub
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Start conversations from Applicant Tracking → Message on a candidate.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <input
+                type="text"
+                placeholder="Search conversations..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              />
+            </div>
+            <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[400px] overflow-y-auto">
+              {hubConversations.map((conv) => {
+                const other = conv.recruiterId === user?.id ? conv.candidate : conv.recruiter;
+                const jobTitle = conv.application?.job?.title || "Application";
+                return (
+                  <button
+                    key={conv.id}
+                    type="button"
+                    onClick={() => setHubSelectedId(conv.id)}
+                    className={`w-full flex items-center gap-3 p-4 text-left transition-colors ${
+                      hubSelectedId === conv.id ? "bg-gray-100 dark:bg-gray-700" : "hover:bg-gray-50 dark:hover:bg-gray-700/70"
+                    }`}
+                  >
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
+                      {(other?.name || "?").charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{other?.name || "Candidate"}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{jobTitle}</p>
+                      {conv.unreadCount > 0 && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                          {conv.unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+              {hubConversations.length === 0 && (
+                <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No conversations yet. Use Message on a candidate in Applicant Tracking to start one.
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col min-h-[400px]">
+            {!hubSelectedId ? (
+              <div className="flex-1 flex items-center justify-center p-8 text-center">
+                <div>
+                  <FiMessageSquare className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Your messages</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                    Select a conversation from the list or start one from Applicant Tracking → Message.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {selectedConv?.candidate?.name || selectedConv?.recruiter?.name || "Conversation"} · {selectedConv?.application?.job?.title || ""}
+                  </p>
+                </div>
+                {hubLoading ? (
+                  <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Loading messages…</div>
+                ) : (
+                  <>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
+                      {hubMessages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                              msg.senderId === user?.id ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+                            <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}>
+                              {new Date(msg.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <form onSubmit={handleSendMessageInHub} className="p-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={hubMessageInput}
+                          onChange={(e) => setHubMessageInput(e.target.value)}
+                          placeholder="Type a message…"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          disabled={hubSending}
+                        />
+                        <button
+                          type="submit"
+                          disabled={!hubMessageInput.trim() || hubSending}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg"
+                        >
+                          {hubSending ? "Sending…" : "Send"}
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProfileTeam = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Profile & Team Management
+        </h2>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+          <FiUser className="h-4 w-4" />
+          <span>Invite team member</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Company profile</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company name</label>
+              <input
+                type="text"
+                defaultValue={user?.company || ""}
+                placeholder="Your company name"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your name</label>
+              <input
+                type="text"
+                defaultValue={user?.name || ""}
+                placeholder="Full name"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input
+                type="email"
+                defaultValue={user?.email || ""}
+                placeholder="email@company.com"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90">
+              Save profile
+            </button>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team members</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Invite colleagues to collaborate on jobs and applications. They will get access based on the role you assign.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                  <FiUser className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">{user?.name || "You"}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Admin</p>
+                </div>
+              </div>
+              <span className="text-xs px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">Owner</span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 pt-2">
+              Add more team members using the &quot;Invite team member&quot; button. Invitations will be sent by email.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderBilling = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Billing & Subscription Management
+        </h2>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+          Manage subscription
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Current plan</h3>
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-lg">
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">Professional</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active jobs: up to 10 • Unlimited applications</p>
+              </div>
+              <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full text-sm">Active</span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+              Your next billing date and invoice history can be viewed below. To change plan or payment method, use the options in the sidebar.
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment method</h3>
+            <div className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <FiCreditCard className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">Card ending in ****4242</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Expires 12/26</p>
+              </div>
+              <button className="ml-auto text-sm text-blue-600 hover:text-blue-700">Update</button>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing summary</h3>
+            <ul className="space-y-3 text-sm">
+              <li className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Plan</span>
+                <span className="text-gray-900 dark:text-white">Professional</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Billing cycle</span>
+                <span className="text-gray-900 dark:text-white">Monthly</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Next billing date</span>
+                <span className="text-gray-900 dark:text-white">Mar 14, 2026</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Settings & Integrations
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Manage your account preferences and connected apps.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notifications</h3>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-700 dark:text-gray-300">New applications</span>
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 dark:border-gray-600" />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-700 dark:text-gray-300">Candidate messages</span>
+              <input type="checkbox" defaultChecked className="rounded border-gray-300 dark:border-gray-600" />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-700 dark:text-gray-300">Weekly digest</span>
+              <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" />
+            </label>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Integrations</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Connect your ATS, calendar, or email to streamline hiring.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <span className="text-gray-900 dark:text-white font-medium">Google Calendar</span>
+              <button className="text-sm text-blue-600 hover:text-blue-700">Connect</button>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <span className="text-gray-900 dark:text-white font-medium">Slack</span>
+              <button className="text-sm text-blue-600 hover:text-blue-700">Connect</button>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <span className="text-gray-900 dark:text-white font-medium">LinkedIn</span>
+              <button className="text-sm text-blue-600 hover:text-blue-700">Connect</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
@@ -1644,35 +2211,15 @@ const RecruiterDashboard = () => {
       case "candidates":
         return renderTalentSearch();
       case "analytics":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Analytics & Reports - Coming Soon
-          </div>
-        );
+        return renderAnalytics();
       case "messages":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Communication Hub - Coming Soon
-          </div>
-        );
+        return renderCommunicationHub();
       case "profile":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Profile & Team Management - Coming Soon
-          </div>
-        );
+        return renderProfileTeam();
       case "billing":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Billing & Subscription Management - Coming Soon
-          </div>
-        );
+        return renderBilling();
       case "settings":
-        return (
-          <div className="text-center py-12 text-gray-500">
-            Settings & Integrations - Coming Soon
-          </div>
-        );
+        return renderSettings();
       default:
         return renderOverview();
     }
@@ -1717,6 +2264,156 @@ const RecruiterDashboard = () => {
       {/* Extension Popup */}
       {showExtensionPopup && (
         <JobDeadlineExtension onClose={() => setShowExtensionPopup(false)} />
+      )}
+
+      {/* Message modal (from Applicant Tracking "Message" button) */}
+      {showMessageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {messageModalLoading
+                  ? "Loading…"
+                  : messageModalConversation
+                    ? `${messageModalConversation.candidate?.name || "Candidate"} · ${messageModalConversation.application?.job?.title || "Application"}`
+                    : "Message"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowMessageModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+              >
+                <FiX className="h-6 w-6" />
+              </button>
+            </div>
+            {messageModalLoading ? (
+              <div className="flex-1 flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                Loading conversation…
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
+                  {messageModalMessages.length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                      No messages yet. Send one below.
+                    </p>
+                  )}
+                  {messageModalMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                          msg.senderId === user?.id
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+                        <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}>
+                          {msg.sender?.name} · {new Date(msg.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={handleSendMessageInModal} className="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={messageInputValue}
+                      onChange={(e) => setMessageInputValue(e.target.value)}
+                      placeholder="Type a message…"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      disabled={messageSending}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!messageInputValue.trim() || messageSending}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg"
+                    >
+                      {messageSending ? "Sending…" : "Send"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Interview modal */}
+      {showInterviewModal && interviewModalApplication && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Schedule Interview
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowInterviewModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+              >
+                <FiX className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-white">{interviewModalApplication.candidateName}</span>
+                {" · "}
+                {interviewModalApplication.jobTitle}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                A confirmation email will be sent to {interviewModalApplication.email}
+              </p>
+            </div>
+            <form onSubmit={handleInterviewModalSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Date &amp; time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={interviewDateTime}
+                  onChange={(e) => setInterviewDateTime(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={interviewNotes}
+                  onChange={(e) => setInterviewNotes(e.target.value)}
+                  placeholder="e.g. Video call link, address, what to prepare..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInterviewModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={interviewSubmitting}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg"
+                >
+                  {interviewSubmitting ? "Scheduling…" : "Schedule & send email"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-# Aspiro ML Service
+# ML Service
 
 AI-powered machine learning service providing career recommendations and resume analysis.
 

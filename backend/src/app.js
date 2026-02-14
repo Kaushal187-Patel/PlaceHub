@@ -24,6 +24,7 @@ const chatbotRoutes = require('./routes/chatbot');
 const healthRoutes = require('./routes/health');
 const uploadcareRoutes = require('./routes/uploadcare');
 const notificationRoutes = require('./routes/notifications');
+const messageRoutes = require('./routes/messages');
 
 const app = express();
 
@@ -102,6 +103,7 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/uploadcare', uploadcareRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
 
 // 404 handler
 app.all('*', (req, res) => {

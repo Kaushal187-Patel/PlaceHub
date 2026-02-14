@@ -59,6 +59,16 @@ const Application = sequelize.define('Application', {
   lastUpdated: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  interviewScheduledAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'interview_scheduled_at'
+  },
+  interviewNotes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'interview_notes'
   }
 }, {
   tableName: 'applications',

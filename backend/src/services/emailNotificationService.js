@@ -67,6 +67,65 @@ class EmailNotificationService {
     }
   }
 
+  async sendInterviewScheduledEmail(user, job, scheduledAt, notes = '') {
+    try {
+      const dateStr = scheduledAt ? new Date(scheduledAt).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+      const timeStr = scheduledAt ? new Date(scheduledAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+
+      const mailOptions = {
+        from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: `Interview Scheduled - ${job.title} at ${job.company}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 20px; border-radius: 10px 10px 0 0;">
+              <h1 style="color: white; margin: 0; text-align: center;">Interview Scheduled</h1>
+            </div>
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
+              <h2 style="color: #333; margin-top: 0;">Hi ${user.name},</h2>
+              <p style="color: #666; font-size: 16px; line-height: 1.6;">
+                Great news! You have been selected for an interview for <strong>${job.title}</strong> at <strong>${job.company}</strong>.
+              </p>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #8b5cf6;">
+                <h3 style="color: #333; margin-top: 0;">Interview Details</h3>
+                <p><strong>Position:</strong> ${job.title}</p>
+                <p><strong>Company:</strong> ${job.company}</p>
+                <p><strong>Date:</strong> ${dateStr}</p>
+                <p><strong>Time:</strong> ${timeStr}</p>
+                ${notes ? `<p><strong>Notes:</strong><br/>${notes.replace(/\n/g, '<br/>')}</p>` : ''}
+              </div>
+              
+              <p style="color: #666; font-size: 16px; line-height: 1.6;">
+                Please be on time and prepared. We look forward to speaking with you!
+              </p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.FRONTEND_URL || ''}/dashboard" 
+                   style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  View My Applications
+                </a>
+              </div>
+              
+              <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
+              <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+                This is an automated message from PlaceHub Career Platform.<br>
+                Please do not reply to this email.
+              </p>
+            </div>
+          </div>
+        `
+      };
+
+      await this.emailTransporter.sendMail(mailOptions);
+      console.log(`Interview scheduled email sent to ${user.email}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to send interview scheduled email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async sendStatusUpdateEmail(user, job, newStatus) {
     try {
       const statusMessages = {

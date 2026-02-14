@@ -51,12 +51,25 @@ const updateApplicationStatus = async (applicationId, status) => {
   }
 };
 
+const scheduleInterview = async (applicationId, { scheduledAt, notes }) => {
+  try {
+    const response = await api.put(`/applications/${applicationId}/schedule-interview`, {
+      scheduledAt,
+      notes: notes || undefined
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to schedule interview');
+  }
+};
+
 const applicationService = {
   applyForJob,
   applyForJobWithDetails,
   getMyApplications,
   getApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  scheduleInterview
 };
 
 export default applicationService;
