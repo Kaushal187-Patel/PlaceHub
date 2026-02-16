@@ -12,6 +12,7 @@ const Navbar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
   const infoMenuRef = useRef(null);
+  const userMenuCloseTimerRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -30,6 +31,21 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleProfileMouseEnter = () => {
+    if (userMenuCloseTimerRef.current) {
+      clearTimeout(userMenuCloseTimerRef.current);
+      userMenuCloseTimerRef.current = null;
+    }
+    setShowUserMenu(true);
+  };
+
+  const handleProfileMouseLeave = () => {
+    userMenuCloseTimerRef.current = setTimeout(() => {
+      setShowUserMenu(false);
+      userMenuCloseTimerRef.current = null;
+    }, 120);
+  };
 
   const dashboardRoute = user ? getRoleBasedRoute(user.role) : "/dashboard";
 
@@ -143,8 +159,8 @@ const Navbar = () => {
               <div
                 className="relative"
                 ref={userMenuRef}
-                onMouseEnter={() => setShowUserMenu(true)}
-                onMouseLeave={() => setShowUserMenu(false)}
+                onMouseEnter={handleProfileMouseEnter}
+                onMouseLeave={handleProfileMouseLeave}
               >
                 <button
                   type="button"
@@ -154,7 +170,8 @@ const Navbar = () => {
                   <span>{user.name}</span>
                 </button>
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-brand-50 dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-100 dark:border-gray-700">
+                  <div className="absolute right-0 top-full pt-1 w-48 z-50">
+                    <div className="bg-brand-50 dark:bg-gray-800 rounded-md shadow-lg py-1 border border-gray-100 dark:border-gray-700 mt-1">
                     <Link
                       to={dashboardRoute}
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 rounded mx-1 transition-colors duration-150 hover:bg-brand-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-brand-200"
@@ -179,6 +196,7 @@ const Navbar = () => {
                       <FiLogOut className="inline mr-2" />
                       Logout
                     </button>
+                    </div>
                   </div>
                 )}
               </div>
