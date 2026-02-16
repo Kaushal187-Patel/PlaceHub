@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { getProfile, updateProfile } from '../store/slices/userSlice';
-import { toast } from 'react-toastify';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiGlobe, FiLinkedin, FiGithub, FiUpload, FiFileText, FiTrash2, FiDownload } from 'react-icons/fi';
-import resumeService from '../services/resumeService';
-import uploadcareResumeService from '../services/uploadcareResumeService';
-import UploadcareResumeUploader from '../components/UploadcareResumeUploader';
+import { useEffect, useState } from "react";
+import {
+  FiGithub,
+  FiGlobe,
+  FiLink,
+  FiLinkedin,
+  FiMail,
+  FiMapPin,
+  FiPhone,
+  FiUser,
+} from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { getProfile, updateProfile } from "../store/slices/userSlice";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -13,137 +19,39 @@ const Profile = () => {
   const { user } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    bio: '',
-    phone: '',
-    location: '',
-    website: '',
-    linkedin: '',
-    github: '',
+    name: "",
+    email: "",
+    bio: "",
+    phone: "",
+    location: "",
+    website: "",
+    linkedin: "",
+    github: "",
+    resumeLink: "",
     skills: [],
     experience: [],
-    education: []
+    education: [],
   });
-  
-  const [resumeData, setResumeData] = useState(null);
-  const [resumeUploading, setResumeUploading] = useState(false);
-  const [uploadcareResume, setUploadcareResume] = useState(null);
 
   useEffect(() => {
     dispatch(getProfile());
-    fetchResumeData();
-    fetchUploadcareResume();
   }, [dispatch]);
-
-  const fetchResumeData = async () => {
-    try {
-      const response = await resumeService.getLatestResume();
-      if (response.status === 'success') {
-        setResumeData(response.data);
-      }
-    } catch (error) {
-      // No resume found - this is normal for new users
-      setResumeData(null);
-    }
-  };
-
-  const handleResumeUpload = async (file) => {
-    try {
-      setResumeUploading(true);
-      const response = await resumeService.analyzeResume(file);
-      if (response.status === 'success') {
-        toast.success('Resume uploaded and analyzed successfully!');
-        await fetchResumeData(); // Refresh resume data
-        
-        // Trigger career recommendations based on resume
-        if (response.data.extracted_skills) {
-          await generateCareerRecommendations(response.data);
-        }
-        
-        // Refresh profile to update dashboard data
-        dispatch(getProfile());
-        
-        // Notify dashboard of resume update
-        window.dispatchEvent(new CustomEvent('resumeUploaded'));
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to upload resume');
-    } finally {
-      setResumeUploading(false);
-    }
-  };
-
-  const fetchUploadcareResume = async () => {
-    try {
-      const response = await uploadcareResumeService.getResume();
-      if (response.status === 'success') {
-        setUploadcareResume(response.data.resume);
-      }
-    } catch (error) {
-      // No resume found - this is normal for new users
-      setUploadcareResume(null);
-    }
-  };
-
-  const handleUploadcareUploadSuccess = async (uploadData) => {
-    try {
-      toast.success('Resume uploaded successfully to Uploadcare!');
-      await fetchUploadcareResume();
-      
-      // Generate career recommendations
-      const careerData = {
-        skills: 'JavaScript, React, Node.js, Python',
-        interests: 'software development, technology',
-        education: 'Computer Science',
-        experience: '2 years',
-        goals: 'career growth, skill development'
-      };
-      localStorage.setItem('latestCareerData', JSON.stringify(careerData));
-      
-      // Refresh profile and notify dashboard
-      dispatch(getProfile());
-      window.dispatchEvent(new CustomEvent('resumeUploaded'));
-    } catch (error) {
-      console.error('Error after upload:', error);
-    }
-  };
-
-  const handleUploadcareUploadError = (error) => {
-    toast.error(error || 'Failed to upload resume');
-  };
-
-  const generateCareerRecommendations = async (resumeAnalysis) => {
-    try {
-      const careerData = {
-        skills: resumeAnalysis.extracted_skills?.join(', ') || '',
-        interests: 'software development, technology',
-        education: resumeAnalysis.education?.join(', ') || '',
-        experience: `${resumeAnalysis.experience_years || 0} years`,
-        goals: 'career growth, skill development'
-      };
-      
-      // This will be used by dashboard to show recommendations
-      localStorage.setItem('latestCareerData', JSON.stringify(careerData));
-    } catch (error) {
-      console.error('Error generating career recommendations:', error);
-    }
-  };
 
   useEffect(() => {
     if (profile) {
       setFormData({
-        name: profile.name || '',
-        email: profile.email || '',
-        bio: profile.bio || '',
-        phone: profile.phone || '',
-        location: profile.location || '',
-        website: profile.website || '',
-        linkedin: profile.linkedin || '',
-        github: profile.github || '',
+        name: profile.name || "",
+        email: profile.email || "",
+        bio: profile.bio || "",
+        phone: profile.phone || "",
+        location: profile.location || "",
+        website: profile.website || "",
+        linkedin: profile.linkedin || "",
+        github: profile.github || "",
+        resumeLink: profile.resumeLink || "",
         skills: profile.skills || [],
         experience: profile.experience || [],
-        education: profile.education || []
+        education: profile.education || [],
       });
     }
   }, [profile]);
@@ -159,11 +67,11 @@ const Profile = () => {
     e.preventDefault();
     try {
       await dispatch(updateProfile(formData)).unwrap();
-      toast.success('Profile updated successfully!');
+      toast.success("Profile updated successfully!");
       // Refresh profile data
       dispatch(getProfile());
     } catch (error) {
-      toast.error(error.message || 'Failed to update profile');
+      toast.error(error.message || "Failed to update profile");
     }
   };
 
@@ -180,7 +88,6 @@ const Profile = () => {
             </p>
           </div>
           <div className="px-8 py-8">
-
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
@@ -211,7 +118,9 @@ const Profile = () => {
                     disabled
                     title="Email cannot be changed for security reasons"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed for security reasons</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email cannot be changed for security reasons
+                  </p>
                 </div>
 
                 <div>
@@ -306,8 +215,20 @@ const Profile = () => {
                 <input
                   type="text"
                   name="skills"
-                  value={Array.isArray(formData.skills) ? formData.skills.join(', ') : ''}
-                  onChange={(e) => setFormData({...formData, skills: e.target.value.split(',').map(s => s.trim()).filter(s => s)})}
+                  value={
+                    Array.isArray(formData.skills)
+                      ? formData.skills.join(", ")
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      skills: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter((s) => s),
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="JavaScript, React, Node.js, Python..."
                 />
@@ -320,17 +241,31 @@ const Profile = () => {
                 </label>
                 <div className="space-y-2">
                   {formData.experience.map((exp, index) => (
-                    <div key={index} className="p-3 border border-gray-200 dark:border-gray-600 rounded-md">
-                      <div className="text-sm font-medium">{exp.position} at {exp.company}</div>
-                      <div className="text-xs text-gray-500">
-                        {exp.startDate && new Date(exp.startDate).toLocaleDateString()} - 
-                        {exp.current ? 'Present' : (exp.endDate && new Date(exp.endDate).toLocaleDateString())}
+                    <div
+                      key={index}
+                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-md"
+                    >
+                      <div className="text-sm font-medium">
+                        {exp.position} at {exp.company}
                       </div>
-                      {exp.description && <div className="text-sm mt-1">{exp.description}</div>}
+                      <div className="text-xs text-gray-500">
+                        {exp.startDate &&
+                          new Date(exp.startDate).toLocaleDateString()}{" "}
+                        -
+                        {exp.current
+                          ? "Present"
+                          : exp.endDate &&
+                            new Date(exp.endDate).toLocaleDateString()}
+                      </div>
+                      {exp.description && (
+                        <div className="text-sm mt-1">{exp.description}</div>
+                      )}
                     </div>
                   ))}
                   {formData.experience.length === 0 && (
-                    <div className="text-gray-500 text-sm italic">No experience added yet</div>
+                    <div className="text-gray-500 text-sm italic">
+                      No experience added yet
+                    </div>
                   )}
                 </div>
               </div>
@@ -342,30 +277,48 @@ const Profile = () => {
                 </label>
                 <div className="space-y-2">
                   {formData.education.map((edu, index) => (
-                    <div key={index} className="p-3 border border-gray-200 dark:border-gray-600 rounded-md">
-                      <div className="text-sm font-medium">{edu.degree} in {edu.field}</div>
-                      <div className="text-xs text-gray-500">{edu.institution}</div>
+                    <div
+                      key={index}
+                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-md"
+                    >
+                      <div className="text-sm font-medium">
+                        {edu.degree} in {edu.field}
+                      </div>
                       <div className="text-xs text-gray-500">
-                        {edu.startDate && new Date(edu.startDate).toLocaleDateString()} - 
-                        {edu.current ? 'Present' : (edu.endDate && new Date(edu.endDate).toLocaleDateString())}
+                        {edu.institution}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {edu.startDate &&
+                          new Date(edu.startDate).toLocaleDateString()}{" "}
+                        -
+                        {edu.current
+                          ? "Present"
+                          : edu.endDate &&
+                            new Date(edu.endDate).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
                   {formData.education.length === 0 && (
-                    <div className="text-gray-500 text-sm italic">No education added yet</div>
+                    <div className="text-gray-500 text-sm italic">
+                      No education added yet
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Uploadcare Resume Upload Section */}
+              {/* Resume link (Google Drive) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Resume (Powered by Uploadcare)
+                  <FiLink className="inline mr-2" />
+                  Resume link (Google Drive)
                 </label>
-                <UploadcareResumeUploader
-                  onUploadSuccess={handleUploadcareUploadSuccess}
-                  onUploadError={handleUploadcareUploadError}
-                  currentResume={uploadcareResume}
+                <input
+                  type="url"
+                  name="resumeLink"
+                  value={formData.resumeLink || ""}
+                  onChange={handleChange}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -381,7 +334,7 @@ const Profile = () => {
                       Updating...
                     </div>
                   ) : (
-                    'Update Profile'
+                    "Update Profile"
                   )}
                 </button>
               </div>

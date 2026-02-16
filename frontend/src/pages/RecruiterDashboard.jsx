@@ -13,7 +13,6 @@ import {
   FiFileText,
   FiMessageSquare,
   FiPlus,
-  FiSearch,
   FiSettings,
   FiStar,
   FiTrash2,
@@ -57,7 +56,8 @@ const RecruiterDashboard = () => {
   const [applicationsError, setApplicationsError] = useState(null);
 
   const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageModalConversation, setMessageModalConversation] = useState(null);
+  const [messageModalConversation, setMessageModalConversation] =
+    useState(null);
   const [messageModalMessages, setMessageModalMessages] = useState([]);
   const [messageModalLoading, setMessageModalLoading] = useState(false);
   const [messageInputValue, setMessageInputValue] = useState("");
@@ -71,7 +71,8 @@ const RecruiterDashboard = () => {
   const [hubSending, setHubSending] = useState(false);
 
   const [showInterviewModal, setShowInterviewModal] = useState(false);
-  const [interviewModalApplication, setInterviewModalApplication] = useState(null);
+  const [interviewModalApplication, setInterviewModalApplication] =
+    useState(null);
   const [interviewDateTime, setInterviewDateTime] = useState("");
   const [interviewNotes, setInterviewNotes] = useState("");
   const [interviewSubmitting, setInterviewSubmitting] = useState(false);
@@ -147,8 +148,8 @@ const RecruiterDashboard = () => {
             skills: Array.isArray(app.job?.skills)
               ? app.job.skills
               : app.job?.skills
-              ? [app.job.skills]
-              : [],
+                ? [app.job.skills]
+                : [],
             experience: "—",
             location: app.job?.location ?? "—",
             resumeId: app.resumeId || app.resume?.id || null,
@@ -373,17 +374,24 @@ const RecruiterDashboard = () => {
 
   const handleInterviewModalSubmit = async (e) => {
     e.preventDefault();
-    if (!interviewModalApplication?.id || !interviewDateTime.trim() || interviewSubmitting) return;
+    if (
+      !interviewModalApplication?.id ||
+      !interviewDateTime.trim() ||
+      interviewSubmitting
+    )
+      return;
     setInterviewSubmitting(true);
     try {
       await applicationService.scheduleInterview(interviewModalApplication.id, {
         scheduledAt: new Date(interviewDateTime).toISOString(),
-        notes: interviewNotes.trim() || undefined
+        notes: interviewNotes.trim() || undefined,
       });
       setShowInterviewModal(false);
       setInterviewModalApplication(null);
       await fetchApplications();
-      alert("Interview scheduled and confirmation email sent to the candidate.");
+      alert(
+        "Interview scheduled and confirmation email sent to the candidate.",
+      );
     } catch (err) {
       alert(err.message || "Failed to schedule interview.");
     } finally {
@@ -398,9 +406,13 @@ const RecruiterDashboard = () => {
     setMessageModalMessages([]);
     setMessageInputValue("");
     try {
-      const conversation = await messageService.getOrCreateConversation(application.id);
+      const conversation = await messageService.getOrCreateConversation(
+        application.id,
+      );
       setMessageModalConversation(conversation);
-      const full = await messageService.getConversationWithMessages(conversation.id);
+      const full = await messageService.getConversationWithMessages(
+        conversation.id,
+      );
       setMessageModalMessages(full.messages || []);
     } catch (err) {
       console.error("Failed to open conversation:", err);
@@ -417,7 +429,10 @@ const RecruiterDashboard = () => {
     if (!body || !messageModalConversation?.id || messageSending) return;
     setMessageSending(true);
     try {
-      const msg = await messageService.sendMessage(messageModalConversation.id, body);
+      const msg = await messageService.sendMessage(
+        messageModalConversation.id,
+        body,
+      );
       setMessageModalMessages((prev) => [...prev, msg]);
       setMessageInputValue("");
     } catch (err) {
@@ -512,7 +527,9 @@ const RecruiterDashboard = () => {
         if (!cancelled) console.error("Failed to load conversations:", err);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [activeTab]);
 
   useEffect(() => {
@@ -533,7 +550,9 @@ const RecruiterDashboard = () => {
       .finally(() => {
         if (!cancelled) setHubLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [hubSelectedId]);
 
   const checkExtensionRequired = async () => {
@@ -551,7 +570,10 @@ const RecruiterDashboard = () => {
       }
     } catch (error) {
       // Backend not running or network error — skip extension popup silently
-      if (error?.code !== "ECONNREFUSED" && error?.message !== "Failed to fetch") {
+      if (
+        error?.code !== "ECONNREFUSED" &&
+        error?.message !== "Failed to fetch"
+      ) {
         console.error("Error checking extension requirements:", error);
       }
     }
@@ -1028,8 +1050,8 @@ const RecruiterDashboard = () => {
                           job.status === "active"
                             ? "bg-green-100 text-green-800"
                             : job.status === "paused"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {job.status}
@@ -1533,12 +1555,12 @@ const RecruiterDashboard = () => {
                             app.status === "shortlisted"
                               ? "bg-green-100 text-green-800"
                               : app.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : app.status === "interview"
-                              ? "bg-blue-100 text-blue-800"
-                              : app.status === "hired"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-red-100 text-red-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : app.status === "interview"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : app.status === "hired"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-red-100 text-red-800"
                           }`}
                         >
                           <option value="pending">Pending</option>
@@ -1748,7 +1770,9 @@ const RecruiterDashboard = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Job Views</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Total Job Views
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboardData.jobs.reduce((sum, j) => sum + (j.views ?? 0), 0)}
               </p>
@@ -1761,7 +1785,9 @@ const RecruiterDashboard = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Applications Received</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Applications Received
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboardData.stats.totalApplications}
               </p>
@@ -1774,7 +1800,9 @@ const RecruiterDashboard = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Shortlisted</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Shortlisted
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {dashboardData.stats.shortlisted}
               </p>
@@ -1806,13 +1834,22 @@ const RecruiterDashboard = () => {
           </h3>
           <div className="space-y-3">
             {dashboardData.jobs.slice(0, 5).map((job) => (
-              <div key={job.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{job.title}</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">{job.applications ?? 0} applications</span>
+              <div
+                key={job.id}
+                className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
+              >
+                <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">
+                  {job.title}
+                </span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {job.applications ?? 0} applications
+                </span>
               </div>
             ))}
             {dashboardData.jobs.length === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No job data yet.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No job data yet.
+              </p>
             )}
           </div>
         </div>
@@ -1822,24 +1859,42 @@ const RecruiterDashboard = () => {
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <span className="text-gray-700 dark:text-gray-300">Pending review</span>
+              <span className="text-gray-700 dark:text-gray-300">
+                Pending review
+              </span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {dashboardData.applications.filter((a) => a.status === "pending").length}
+                {
+                  dashboardData.applications.filter(
+                    (a) => a.status === "pending",
+                  ).length
+                }
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <span className="text-gray-700 dark:text-gray-300">Shortlisted</span>
-              <span className="font-medium text-gray-900 dark:text-white">{dashboardData.stats.shortlisted}</span>
+              <span className="text-gray-700 dark:text-gray-300">
+                Shortlisted
+              </span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {dashboardData.stats.shortlisted}
+              </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <span className="text-gray-700 dark:text-gray-300">Interview stage</span>
+              <span className="text-gray-700 dark:text-gray-300">
+                Interview stage
+              </span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {dashboardData.applications.filter((a) => a.status === "interview").length}
+                {
+                  dashboardData.applications.filter(
+                    (a) => a.status === "interview",
+                  ).length
+                }
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <span className="text-gray-700 dark:text-gray-300">Hired</span>
-              <span className="font-medium text-gray-900 dark:text-white">{dashboardData.stats.hired}</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {dashboardData.stats.hired}
+              </span>
             </div>
           </div>
         </div>
@@ -1872,7 +1927,8 @@ const RecruiterDashboard = () => {
             Communication Hub
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Start conversations from Applicant Tracking → Message on a candidate.
+            Start conversations from Applicant Tracking → Message on a
+            candidate.
           </p>
         </div>
 
@@ -1887,7 +1943,10 @@ const RecruiterDashboard = () => {
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[400px] overflow-y-auto">
               {hubConversations.map((conv) => {
-                const other = conv.recruiterId === user?.id ? conv.candidate : conv.recruiter;
+                const other =
+                  conv.recruiterId === user?.id
+                    ? conv.candidate
+                    : conv.recruiter;
                 const jobTitle = conv.application?.job?.title || "Application";
                 return (
                   <button
@@ -1895,15 +1954,21 @@ const RecruiterDashboard = () => {
                     type="button"
                     onClick={() => setHubSelectedId(conv.id)}
                     className={`w-full flex items-center gap-3 p-4 text-left transition-colors ${
-                      hubSelectedId === conv.id ? "bg-gray-100 dark:bg-gray-700" : "hover:bg-gray-50 dark:hover:bg-gray-700/70"
+                      hubSelectedId === conv.id
+                        ? "bg-gray-100 dark:bg-gray-700"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700/70"
                     }`}
                   >
                     <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
                       {(other?.name || "?").charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">{other?.name || "Candidate"}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{jobTitle}</p>
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                        {other?.name || "Candidate"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {jobTitle}
+                      </p>
                       {conv.unreadCount > 0 && (
                         <span className="inline-block mt-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
                           {conv.unreadCount} new
@@ -1915,7 +1980,8 @@ const RecruiterDashboard = () => {
               })}
               {hubConversations.length === 0 && (
                 <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No conversations yet. Use Message on a candidate in Applicant Tracking to start one.
+                  No conversations yet. Use Message on a candidate in Applicant
+                  Tracking to start one.
                 </div>
               )}
             </div>
@@ -1925,9 +1991,12 @@ const RecruiterDashboard = () => {
               <div className="flex-1 flex items-center justify-center p-8 text-center">
                 <div>
                   <FiMessageSquare className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Your messages</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Your messages
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                    Select a conversation from the list or start one from Applicant Tracking → Message.
+                    Select a conversation from the list or start one from
+                    Applicant Tracking → Message.
                   </p>
                 </div>
               </div>
@@ -1935,11 +2004,16 @@ const RecruiterDashboard = () => {
               <>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {selectedConv?.candidate?.name || selectedConv?.recruiter?.name || "Conversation"} · {selectedConv?.application?.job?.title || ""}
+                    {selectedConv?.candidate?.name ||
+                      selectedConv?.recruiter?.name ||
+                      "Conversation"}{" "}
+                    · {selectedConv?.application?.job?.title || ""}
                   </p>
                 </div>
                 {hubLoading ? (
-                  <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">Loading messages…</div>
+                  <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    Loading messages…
+                  </div>
                 ) : (
                   <>
                     <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
@@ -1950,18 +2024,27 @@ const RecruiterDashboard = () => {
                         >
                           <div
                             className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                              msg.senderId === user?.id ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
+                              msg.senderId === user?.id
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words">{msg.body}</p>
-                            <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}>
+                            <p className="whitespace-pre-wrap break-words">
+                              {msg.body}
+                            </p>
+                            <p
+                              className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}
+                            >
                               {new Date(msg.createdAt).toLocaleString()}
                             </p>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <form onSubmit={handleSendMessageInHub} className="p-4 border-t border-gray-200 dark:border-gray-700">
+                    <form
+                      onSubmit={handleSendMessageInHub}
+                      className="p-4 border-t border-gray-200 dark:border-gray-700"
+                    >
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -2004,10 +2087,14 @@ const RecruiterDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Company profile</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Company profile
+          </h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Company name
+              </label>
               <input
                 type="text"
                 defaultValue={user?.company || ""}
@@ -2016,7 +2103,9 @@ const RecruiterDashboard = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Your name
+              </label>
               <input
                 type="text"
                 defaultValue={user?.name || ""}
@@ -2025,7 +2114,9 @@ const RecruiterDashboard = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email
+              </label>
               <input
                 type="email"
                 defaultValue={user?.email || ""}
@@ -2039,9 +2130,12 @@ const RecruiterDashboard = () => {
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team members</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Team members
+          </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Invite colleagues to collaborate on jobs and applications. They will get access based on the role you assign.
+            Invite colleagues to collaborate on jobs and applications. They will
+            get access based on the role you assign.
           </p>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -2050,14 +2144,21 @@ const RecruiterDashboard = () => {
                   <FiUser className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{user?.name || "You"}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Admin</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {user?.name || "You"}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Admin
+                  </p>
                 </div>
               </div>
-              <span className="text-xs px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">Owner</span>
+              <span className="text-xs px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">
+                Owner
+              </span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 pt-2">
-              Add more team members using the &quot;Invite team member&quot; button. Invitations will be sent by email.
+              Add more team members using the &quot;Invite team member&quot;
+              button. Invitations will be sent by email.
             </p>
           </div>
         </div>
@@ -2079,45 +2180,72 @@ const RecruiterDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Current plan</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Current plan
+            </h3>
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-lg">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Professional</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active jobs: up to 10 • Unlimited applications</p>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  Professional
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Active jobs: up to 10 • Unlimited applications
+                </p>
               </div>
-              <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full text-sm">Active</span>
+              <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full text-sm">
+                Active
+              </span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-              Your next billing date and invoice history can be viewed below. To change plan or payment method, use the options in the sidebar.
+              Your next billing date and invoice history can be viewed below. To
+              change plan or payment method, use the options in the sidebar.
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment method</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Payment method
+            </h3>
             <div className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
               <FiCreditCard className="h-8 w-8 text-gray-500 dark:text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">Card ending in ****4242</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Expires 12/26</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  Card ending in ****4242
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Expires 12/26
+                </p>
               </div>
-              <button className="ml-auto text-sm text-blue-600 hover:text-blue-700">Update</button>
+              <button className="ml-auto text-sm text-blue-600 hover:text-blue-700">
+                Update
+              </button>
             </div>
           </div>
         </div>
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Billing summary</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Billing summary
+            </h3>
             <ul className="space-y-3 text-sm">
               <li className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Plan</span>
-                <span className="text-gray-900 dark:text-white">Professional</span>
+                <span className="text-gray-900 dark:text-white">
+                  Professional
+                </span>
               </li>
               <li className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Billing cycle</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Billing cycle
+                </span>
                 <span className="text-gray-900 dark:text-white">Monthly</span>
               </li>
               <li className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Next billing date</span>
-                <span className="text-gray-900 dark:text-white">Mar 14, 2026</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Next billing date
+                </span>
+                <span className="text-gray-900 dark:text-white">
+                  Mar 14, 2026
+                </span>
               </li>
             </ul>
           </div>
@@ -2139,39 +2267,72 @@ const RecruiterDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notifications</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Notifications
+          </h3>
           <div className="space-y-4">
             <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-gray-700 dark:text-gray-300">New applications</span>
-              <input type="checkbox" defaultChecked className="rounded border-gray-300 dark:border-gray-600" />
+              <span className="text-gray-700 dark:text-gray-300">
+                New applications
+              </span>
+              <input
+                type="checkbox"
+                defaultChecked
+                className="rounded border-gray-300 dark:border-gray-600"
+              />
             </label>
             <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-gray-700 dark:text-gray-300">Candidate messages</span>
-              <input type="checkbox" defaultChecked className="rounded border-gray-300 dark:border-gray-600" />
+              <span className="text-gray-700 dark:text-gray-300">
+                Candidate messages
+              </span>
+              <input
+                type="checkbox"
+                defaultChecked
+                className="rounded border-gray-300 dark:border-gray-600"
+              />
             </label>
             <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-gray-700 dark:text-gray-300">Weekly digest</span>
-              <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" />
+              <span className="text-gray-700 dark:text-gray-300">
+                Weekly digest
+              </span>
+              <input
+                type="checkbox"
+                className="rounded border-gray-300 dark:border-gray-600"
+              />
             </label>
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Integrations</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Integrations
+          </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Connect your ATS, calendar, or email to streamline hiring.
           </p>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <span className="text-gray-900 dark:text-white font-medium">Google Calendar</span>
-              <button className="text-sm text-blue-600 hover:text-blue-700">Connect</button>
+              <span className="text-gray-900 dark:text-white font-medium">
+                Google Calendar
+              </span>
+              <button className="text-sm text-blue-600 hover:text-blue-700">
+                Connect
+              </button>
             </div>
             <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <span className="text-gray-900 dark:text-white font-medium">Slack</span>
-              <button className="text-sm text-blue-600 hover:text-blue-700">Connect</button>
+              <span className="text-gray-900 dark:text-white font-medium">
+                Slack
+              </span>
+              <button className="text-sm text-blue-600 hover:text-blue-700">
+                Connect
+              </button>
             </div>
             <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <span className="text-gray-900 dark:text-white font-medium">LinkedIn</span>
-              <button className="text-sm text-blue-600 hover:text-blue-700">Connect</button>
+              <span className="text-gray-900 dark:text-white font-medium">
+                LinkedIn
+              </span>
+              <button className="text-sm text-blue-600 hover:text-blue-700">
+                Connect
+              </button>
             </div>
           </div>
         </div>
@@ -2285,15 +2446,23 @@ const RecruiterDashboard = () => {
                             : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words">{msg.body}</p>
-                        <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}>
-                          {msg.sender?.name} · {new Date(msg.createdAt).toLocaleString()}
+                        <p className="whitespace-pre-wrap break-words">
+                          {msg.body}
+                        </p>
+                        <p
+                          className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}
+                        >
+                          {msg.sender?.name} ·{" "}
+                          {new Date(msg.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <form onSubmit={handleSendMessageInModal} className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <form
+                  onSubmit={handleSendMessageInModal}
+                  className="p-4 border-t border-gray-200 dark:border-gray-700"
+                >
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -2336,15 +2505,21 @@ const RecruiterDashboard = () => {
             </div>
             <div className="p-4 border-b border-gray-100 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-gray-900 dark:text-white">{interviewModalApplication.candidateName}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {interviewModalApplication.candidateName}
+                </span>
                 {" · "}
                 {interviewModalApplication.jobTitle}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                A confirmation email will be sent to {interviewModalApplication.email}
+                A confirmation email will be sent to{" "}
+                {interviewModalApplication.email}
               </p>
             </div>
-            <form onSubmit={handleInterviewModalSubmit} className="p-4 space-y-4">
+            <form
+              onSubmit={handleInterviewModalSubmit}
+              className="p-4 space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Date &amp; time <span className="text-red-500">*</span>
@@ -2383,7 +2558,9 @@ const RecruiterDashboard = () => {
                   disabled={interviewSubmitting}
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg"
                 >
-                  {interviewSubmitting ? "Scheduling…" : "Schedule & send email"}
+                  {interviewSubmitting
+                    ? "Scheduling…"
+                    : "Schedule & send email"}
                 </button>
               </div>
             </form>
