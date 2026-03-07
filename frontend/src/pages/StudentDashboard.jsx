@@ -273,7 +273,7 @@ const StudentDashboard = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await jobService.getAllJobs();
+      const response = await jobService.getAllJobs({ limit: "all" });
       if (response.status === "success") {
         const jobsData = response.data
           .map((job) => ({
@@ -290,6 +290,7 @@ const StudentDashboard = () => {
             saved: false,
             description: job.description,
             skills: job.skills || [],
+            status: job.status,
           }))
           .filter((job) => job.status !== "closed");
 

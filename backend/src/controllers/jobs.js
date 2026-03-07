@@ -151,21 +151,31 @@ const getAllJobs = async (req, res) => {
       where.skills = { [Op.overlap]: skillArray };
     }
 
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const fetchAll = String(limit).toLowerCase() === 'all';
+    const parsedLimit = Number.parseInt(limit, 10);
+    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
+    const parsedPage = Number.parseInt(page, 10);
+    const safePage = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const offset = (safePage - 1) * safeLimit;
 
-    const { count, rows: jobs } = await Job.findAndCountAll({
+    const query = {
       where,
-      limit: parseInt(limit),
-      offset,
       order: [['createdAt', 'DESC']]
-    });
+    };
+
+    if (!fetchAll) {
+      query.limit = safeLimit;
+      query.offset = offset;
+    }
+
+    const { count, rows: jobs } = await Job.findAndCountAll(query);
 
     res.status(200).json({
       status: 'success',
       count: jobs.length,
       total: count,
-      page: parseInt(page),
-      pages: Math.ceil(count / limit),
+      page: fetchAll ? 1 : safePage,
+      pages: fetchAll ? 1 : Math.ceil(count / safeLimit),
       data: jobs
     });
   } catch (error) {

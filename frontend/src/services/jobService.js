@@ -26,6 +26,9 @@ const getAllJobs = async (filters = {}) => {
     const response = await api.get(`/jobs?${params}`);
     return response.data;
   } catch (error) {
+    if (error.response?.status === 429) {
+      throw new Error('Too many requests. Please wait a moment and try again.');
+    }
     throw new Error(error.response?.data?.message || 'Failed to fetch jobs');
   }
 };
