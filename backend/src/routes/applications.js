@@ -21,7 +21,7 @@ router.route('/my')
   .get(authorize('student'), getMyApplications);
 
 router.route('/apply/:jobId')
-  .post(authorize('student', 'recruiter'), applyForJob);
+  .post(authorize('student'), applyForJob);
 
 router.route('/:id/withdraw')
   .put(authorize('student'), withdrawApplication);

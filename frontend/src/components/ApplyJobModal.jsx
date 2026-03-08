@@ -99,14 +99,14 @@ const ApplyJobModal = ({ open, onOpenChange, job, onSuccess, onError }) => {
         }
       }
 
-      await applicationService.applyForJobWithDetails(job.id, {
+      const response = await applicationService.applyForJobWithDetails(job.id, {
         experience: experience.trim(),
         currentJob: currentJob.trim() || undefined,
         resumeId: resumeId || undefined,
       });
 
       handleClose();
-      onSuccess?.();
+      onSuccess?.(response);
     } catch (err) {
       onError?.(err);
       console.error("Failed to submit application", err);

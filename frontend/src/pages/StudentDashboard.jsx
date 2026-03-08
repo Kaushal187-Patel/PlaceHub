@@ -64,6 +64,8 @@ const StudentDashboard = () => {
 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const canApplyAsStudent =
+    !!user && (!user.role || String(user.role).toLowerCase() === "student");
   const { recommendations, isLoading } = useSelector((state) => state.career);
 
   useEffect(() => {
@@ -424,9 +426,18 @@ const StudentDashboard = () => {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => handleApplyJob(job)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                disabled={!canApplyAsStudent || hasAppliedToJob(job.id)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium ${
+                  !canApplyAsStudent || hasAppliedToJob(job.id)
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
               >
-                Apply Now
+                {!canApplyAsStudent
+                  ? "Students Only"
+                  : hasAppliedToJob(job.id)
+                    ? "Applied"
+                    : "Apply Now"}
               </button>
               <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm">
                 View Details
@@ -459,7 +470,7 @@ const StudentDashboard = () => {
         const applications = response.data.map((app) => {
           console.log("Processing application:", app);
           return {
-            id: app._id,
+            id: app.id || app._id,
             jobTitle: app.job?.title || "Job Title Not Available",
             company: app.job?.company || "Company Not Available",
             location: app.job?.location || "Location Not Available",
@@ -474,7 +485,7 @@ const StudentDashboard = () => {
               app.updatedAt || app.createdAt,
             ).toLocaleDateString(),
             coverLetter: app.coverLetter || "",
-            jobId: app.job?._id,
+            jobId: app.job?.id || app.job?._id || app.jobId || null,
           };
         });
 
@@ -491,6 +502,13 @@ const StudentDashboard = () => {
         applications: [],
       }));
     }
+  };
+
+  const hasAppliedToJob = (jobId) => {
+    if (!jobId) return false;
+    return dashboardData.applications.some(
+      (app) => String(app.jobId) === String(jobId),
+    );
   };
 
   const renderApplications = () => (
@@ -702,26 +720,56 @@ const StudentDashboard = () => {
       alert("Invalid job. Please try again.");
       return;
     }
+    if (!canApplyAsStudent) {
+      alert("Only students can apply for jobs.");
+      return;
+    }
+    if (hasAppliedToJob(job.id)) {
+      alert("You have already applied to this job.");
+      return;
+    }
     setJobToApply(job);
     setApplyModalOpen(true);
   };
 
-  const handleApplySuccess = () => {
+  const handleApplySuccess = (response) => {
     if (!jobToApply?.id) return;
-    const newApplication = {
-      id: jobToApply.id,
-      jobTitle: jobToApply?.title,
-      company: jobToApply?.company,
-      appliedDate: new Date().toISOString().split("T")[0],
-      status: "pending",
-      lastUpdate: new Date().toISOString().split("T")[0],
-    };
+    const alreadyApplied = (response?.message || "")
+      .toLowerCase()
+      .includes("already");
+    const jobAlreadyInList = hasAppliedToJob(jobToApply.id);
+
+    if (!jobAlreadyInList) {
+      const newApplication = {
+        id: response?.data?.id || `temp-${jobToApply.id}`,
+        jobTitle: jobToApply?.title,
+        company: jobToApply?.company,
+        appliedDate: new Date().toISOString().split("T")[0],
+        status: response?.data?.status || "pending",
+        lastUpdate: new Date().toISOString().split("T")[0],
+        jobId: jobToApply.id,
+      };
+      setDashboardData((prev) => ({
+        ...prev,
+        applications: [newApplication, ...prev.applications],
+      }));
+    }
+
     setDashboardData((prev) => ({
       ...prev,
-      applications: [newApplication, ...prev.applications],
+      jobs: prev.jobs.map((job) =>
+        String(job.id) === String(jobToApply.id)
+          ? { ...job, applied: true }
+          : job,
+      ),
     }));
+    fetchApplications();
     setJobToApply(null);
-    alert("Application submitted successfully!");
+    alert(
+      alreadyApplied
+        ? "You already applied to this job."
+        : "Application submitted successfully!",
+    );
   };
 
   const tabs = [
@@ -1348,9 +1396,18 @@ const StudentDashboard = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApplyJob(job)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
+                    disabled={!canApplyAsStudent || hasAppliedToJob(job.id)}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                      !canApplyAsStudent || hasAppliedToJob(job.id)
+                        ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
                   >
-                    Apply
+                    {!canApplyAsStudent
+                      ? "Students Only"
+                      : hasAppliedToJob(job.id)
+                        ? "Applied"
+                        : "Apply"}
                   </button>
                   <button
                     onClick={() => setActiveTab("jobs")}
@@ -1717,7 +1774,7 @@ const StudentDashboard = () => {
       </div>
 
       <ApplyJobModal
-        open={applyModalOpen}
+        open={canApplyAsStudent && applyModalOpen}
         onOpenChange={setApplyModalOpen}
         job={jobToApply}
         onSuccess={handleApplySuccess}

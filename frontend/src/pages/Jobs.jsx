@@ -18,6 +18,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from "../components/ui/Modal";
+import applicationService from "../services/applicationService";
 import jobService from "../services/jobService";
 import userService from "../services/userService";
 
@@ -38,6 +39,7 @@ const Jobs = () => {
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
+  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
   // Comprehensive worldwide locations database
   const worldwideLocations = [
@@ -742,11 +744,16 @@ const Jobs = () => {
   ];
 
   const { user } = useSelector((state) => state.auth);
+  const canApplyAsStudent =
+    !!user && (!user.role || String(user.role).toLowerCase() === "student");
 
   useEffect(() => {
     fetchJobs();
     if (user) {
       fetchSavedJobs();
+      fetchAppliedJobs();
+    } else {
+      setAppliedJobIds(new Set());
     }
   }, [user]);
 
@@ -801,6 +808,21 @@ const Jobs = () => {
     }
   };
 
+  const fetchAppliedJobs = async () => {
+    try {
+      const response = await applicationService.getMyApplications();
+      if (response?.status === "success" && Array.isArray(response.data)) {
+        const ids = response.data
+          .map((app) => app?.job?.id || app?.job?._id || app?.jobId)
+          .filter(Boolean)
+          .map((id) => String(id));
+        setAppliedJobIds(new Set(ids));
+      }
+    } catch (error) {
+      console.error("Error fetching applied jobs:", error);
+    }
+  };
+
   const handleSaveJob = async (jobId) => {
     if (!user) {
       alert("Please login to save jobs");
@@ -827,18 +849,36 @@ const Jobs = () => {
       alert("Please login to apply for jobs");
       return;
     }
+    if (!canApplyAsStudent) {
+      alert("Only students can apply for jobs.");
+      return;
+    }
+    if (appliedJobIds.has(String(job.id))) {
+      alert("You have already applied to this job.");
+      return;
+    }
     setJobToApply(job);
     setApplyModalOpen(true);
   };
 
-  const handleApplySuccess = () => {
+  const handleApplySuccess = (response) => {
+    const alreadyApplied = (response?.message || "")
+      .toLowerCase()
+      .includes("already");
+
     if (jobToApply?.id) {
+      const jobId = String(jobToApply.id);
+      setAppliedJobIds((prev) => new Set([...prev, jobId]));
       setJobs((prev) =>
         prev.map((j) => (j.id === jobToApply.id ? { ...j, applied: true } : j)),
       );
     }
     setJobToApply(null);
-    alert("Application submitted successfully!");
+    alert(
+      alreadyApplied
+        ? "You already applied to this job."
+        : "Application submitted successfully!",
+    );
   };
 
   const handleFilterChange = (key, value) => {
@@ -1098,14 +1138,26 @@ const Jobs = () => {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => handleApplyJob(job)}
-                  disabled={job.daysLeft <= 0}
+                  disabled={
+                    job.daysLeft <= 0 ||
+                    appliedJobIds.has(String(job.id)) ||
+                    (user && !canApplyAsStudent)
+                  }
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium ${
-                    job.daysLeft <= 0
+                    job.daysLeft <= 0 ||
+                    appliedJobIds.has(String(job.id)) ||
+                    (user && !canApplyAsStudent)
                       ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                       : "bg-blue-600 hover:bg-blue-700 text-white"
                   }`}
                 >
-                  {job.daysLeft <= 0 ? "Application Closed" : "Apply Now"}
+                  {user && !canApplyAsStudent
+                    ? "Students Only"
+                    : job.daysLeft <= 0
+                    ? "Application Closed"
+                    : appliedJobIds.has(String(job.id))
+                      ? "Applied"
+                      : "Apply Now"}
                 </button>
                 <button
                   onClick={() => {
@@ -1224,16 +1276,26 @@ const Jobs = () => {
                       setJobToApply(selectedJob);
                       setApplyModalOpen(true);
                     }}
-                    disabled={selectedJob.daysLeft <= 0}
+                    disabled={
+                      selectedJob.daysLeft <= 0 ||
+                      appliedJobIds.has(String(selectedJob.id)) ||
+                      (user && !canApplyAsStudent)
+                    }
                     className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium ${
-                      selectedJob.daysLeft <= 0
+                      selectedJob.daysLeft <= 0 ||
+                      appliedJobIds.has(String(selectedJob.id)) ||
+                      (user && !canApplyAsStudent)
                         ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
                   >
-                    {selectedJob.daysLeft <= 0
+                    {user && !canApplyAsStudent
+                      ? "Students Only"
+                      : selectedJob.daysLeft <= 0
                       ? "Application Closed"
-                      : "Apply Now"}
+                      : appliedJobIds.has(String(selectedJob.id))
+                        ? "Applied"
+                        : "Apply Now"}
                   </button>
                   {user && (
                     <button
