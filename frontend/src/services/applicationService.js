@@ -63,13 +63,23 @@ const scheduleInterview = async (applicationId, { scheduledAt, notes }) => {
   }
 };
 
+const deleteApplication = async (applicationId) => {
+  try {
+    const response = await api.delete(`/applications/${applicationId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to delete application');
+  }
+};
+
 const applicationService = {
   applyForJob,
   applyForJobWithDetails,
   getMyApplications,
   getApplications,
   updateApplicationStatus,
-  scheduleInterview
+  scheduleInterview,
+  deleteApplication
 };
 
 export default applicationService;

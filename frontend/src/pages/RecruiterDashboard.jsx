@@ -397,6 +397,25 @@ const RecruiterDashboard = () => {
     }
   };
 
+  const handleDeleteApplication = async (applicationId) => {
+    if (
+      !window.confirm(
+        "Delete this application permanently? The student will be able to apply again.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await applicationService.deleteApplication(applicationId);
+      await fetchApplications();
+      alert("Application deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      alert("Failed to delete application: " + error.message);
+    }
+  };
+
   const handleJobFormChange = (e) => {
     const { name, value } = e.target;
     setJobFormData((prev) => ({
@@ -1549,6 +1568,13 @@ const RecruiterDashboard = () => {
                             title="Reject"
                           >
                             <FiX className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteApplication(app.id)}
+                            className="text-gray-500 hover:text-red-600"
+                            title="Delete Application"
+                          >
+                            <FiTrash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>

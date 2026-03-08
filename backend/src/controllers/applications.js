@@ -1,4 +1,4 @@
-const { Application, Job, Resume, User } = require('../models');
+const { Application, Job, Resume, User, Conversation } = require('../models');
 const { Op } = require('sequelize');
 const emailNotificationService = require('../services/emailNotificationService');
 
@@ -430,8 +430,51 @@ const scheduleInterview = async (req, res) => {
   }
 };
 
-const deleteApplication = (req, res) => {
-  res.json({ message: 'Delete application - placeholder' });
+const deleteApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const application = await Application.findByPk(id, {
+      include: [{ model: Job, as: 'job', attributes: ['id', 'recruiterId'] }]
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Application not found'
+      });
+    }
+
+    const isAdmin = req.user?.role === 'admin';
+    const isOwnerRecruiter =
+      application.job && String(application.job.recruiterId) === String(req.user?.id);
+
+    if (!isAdmin && !isOwnerRecruiter) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to delete this application'
+      });
+    }
+
+    await Conversation.update(
+      { applicationId: null },
+      { where: { applicationId: application.id } }
+    );
+
+    await application.destroy();
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Application deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete application error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete application',
+      error: error.message
+    });
+  }
 };
 
 const getMyApplications = async (req, res) => {

@@ -33,7 +33,7 @@ router.route('/')
 router.route('/:id')
   .get(authorize('recruiter', 'admin'), getApplication)
   .put(authorize('recruiter', 'admin'), updateApplication)
-  .delete(authorize('admin'), deleteApplication);
+  .delete(authorize('recruiter', 'admin'), deleteApplication);
 
 router.route('/:id/status')
   .put(authorize('recruiter', 'admin'), updateApplication);
