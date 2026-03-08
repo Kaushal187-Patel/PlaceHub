@@ -55,14 +55,6 @@ const RecruiterDashboard = () => {
   const [jobsError, setJobsError] = useState(null);
   const [applicationsError, setApplicationsError] = useState(null);
 
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageModalConversation, setMessageModalConversation] =
-    useState(null);
-  const [messageModalMessages, setMessageModalMessages] = useState([]);
-  const [messageModalLoading, setMessageModalLoading] = useState(false);
-  const [messageInputValue, setMessageInputValue] = useState("");
-  const [messageSending, setMessageSending] = useState(false);
-
   const [hubConversations, setHubConversations] = useState([]);
   const [hubSelectedId, setHubSelectedId] = useState(null);
   const [hubMessages, setHubMessages] = useState([]);
@@ -396,49 +388,6 @@ const RecruiterDashboard = () => {
       alert(err.message || "Failed to schedule interview.");
     } finally {
       setInterviewSubmitting(false);
-    }
-  };
-
-  const handleSendMessage = async (application) => {
-    setMessageModalLoading(true);
-    setShowMessageModal(true);
-    setMessageModalConversation(null);
-    setMessageModalMessages([]);
-    setMessageInputValue("");
-    try {
-      const conversation = await messageService.getOrCreateConversation(
-        application.id,
-      );
-      setMessageModalConversation(conversation);
-      const full = await messageService.getConversationWithMessages(
-        conversation.id,
-      );
-      setMessageModalMessages(full.messages || []);
-    } catch (err) {
-      console.error("Failed to open conversation:", err);
-      alert(err.message || "Failed to open conversation.");
-      setShowMessageModal(false);
-    } finally {
-      setMessageModalLoading(false);
-    }
-  };
-
-  const handleSendMessageInModal = async (e) => {
-    e.preventDefault();
-    const body = messageInputValue.trim();
-    if (!body || !messageModalConversation?.id || messageSending) return;
-    setMessageSending(true);
-    try {
-      const msg = await messageService.sendMessage(
-        messageModalConversation.id,
-        body,
-      );
-      setMessageModalMessages((prev) => [...prev, msg]);
-      setMessageInputValue("");
-    } catch (err) {
-      alert(err.message || "Failed to send message.");
-    } finally {
-      setMessageSending(false);
     }
   };
 
@@ -1595,13 +1544,6 @@ const RecruiterDashboard = () => {
                             <FiCalendar className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleSendMessage(app)}
-                            className="text-gray-600 hover:text-gray-700"
-                            title="Send Message"
-                          >
-                            <FiMessageSquare className="h-4 w-4" />
-                          </button>
-                          <button
                             onClick={() => handleReject(app.id)}
                             className="text-red-600 hover:text-red-700"
                             title="Reject"
@@ -2402,91 +2344,6 @@ const RecruiterDashboard = () => {
         <JobDeadlineExtension onClose={() => setShowExtensionPopup(false)} />
       )}
 
-      {/* Message modal (from Applicant Tracking "Message" button) */}
-      {showMessageModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {messageModalLoading
-                  ? "Loading…"
-                  : messageModalConversation
-                    ? `${messageModalConversation.candidate?.name || "Candidate"} · ${messageModalConversation.application?.job?.title || "Application"}`
-                    : "Message"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowMessageModal(false)}
-                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
-              >
-                <FiX className="h-6 w-6" />
-              </button>
-            </div>
-            {messageModalLoading ? (
-              <div className="flex-1 flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
-                Loading conversation…
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
-                  {messageModalMessages.length === 0 && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      No messages yet. Send one below.
-                    </p>
-                  )}
-                  {messageModalMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                          msg.senderId === user?.id
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white"
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap break-words">
-                          {msg.body}
-                        </p>
-                        <p
-                          className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}
-                        >
-                          {msg.sender?.name} ·{" "}
-                          {new Date(msg.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <form
-                  onSubmit={handleSendMessageInModal}
-                  className="p-4 border-t border-gray-200 dark:border-gray-700"
-                >
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={messageInputValue}
-                      onChange={(e) => setMessageInputValue(e.target.value)}
-                      placeholder="Type a message…"
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      disabled={messageSending}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!messageInputValue.trim() || messageSending}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg"
-                    >
-                      {messageSending ? "Sending…" : "Send"}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Schedule Interview modal */}
       {showInterviewModal && interviewModalApplication && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -2572,3 +2429,4 @@ const RecruiterDashboard = () => {
 };
 
 export default RecruiterDashboard;
+
