@@ -156,7 +156,7 @@ const TermsOfService = () => {
               </p>
               <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
                 <p className="text-gray-900 dark:text-white font-medium">
-                  Email: legal@aspiro.com
+                  Email: legal@placehub.com
                 </p>
                 <p className="text-gray-900 dark:text-white font-medium">
                   Address: 123 Career Street, Tech City, TC 12345

@@ -118,7 +118,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Email</h3>
-                    <p className="text-gray-600 dark:text-gray-300">support@aspiro.com</p>
+                    <p className="text-gray-600 dark:text-gray-300">support@placehub.com</p>
                   </div>
                 </div>
                 <div className="flex items-center">
