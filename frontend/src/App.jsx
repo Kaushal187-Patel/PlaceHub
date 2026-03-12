@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Profile from "./pages/Profile";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import ResumeAnalyzer from "./pages/ResumeAnalyzer";
 import StudentDashboard from "./pages/StudentDashboard";
 import TermsOfService from "./pages/TermsOfService";
@@ -33,6 +34,7 @@ function App() {
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password/:resetToken" element={<ResetPassword />} />
               <Route path="auth/success" element={<AuthSuccess />} />
               <Route path="jobs" element={<Jobs />} />
               <Route

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiMail, FiArrowLeft } from 'react-icons/fi';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -10,14 +13,27 @@ const ForgotPassword = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!email) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/forgotpassword`, { email });
+      
+      if (response.data.status === 'success') {
+        setIsSubmitted(true);
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Failed to send reset link. Please try again.';
+      toast.error(errorMsg);
+    } finally {
       setIsLoading(false);
-      setIsSubmitted(true);
-      toast.success('Password reset link sent to your email!');
-    }, 2000);
+    }
   };
 
   if (isSubmitted) {
