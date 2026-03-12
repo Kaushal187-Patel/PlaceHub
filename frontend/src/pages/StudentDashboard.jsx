@@ -64,8 +64,6 @@ const StudentDashboard = () => {
 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const canApplyAsStudent =
-    !!user && (!user.role || String(user.role).toLowerCase() === "student");
   const { recommendations, isLoading } = useSelector((state) => state.career);
 
   useEffect(() => {
@@ -275,7 +273,7 @@ const StudentDashboard = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await jobService.getAllJobs({ limit: "all" });
+      const response = await jobService.getAllJobs();
       if (response.status === "success") {
         const jobsData = response.data
           .map((job) => ({
@@ -292,7 +290,6 @@ const StudentDashboard = () => {
             saved: false,
             description: job.description,
             skills: job.skills || [],
-            status: job.status,
           }))
           .filter((job) => job.status !== "closed");
 
@@ -426,18 +423,9 @@ const StudentDashboard = () => {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => handleApplyJob(job)}
-                disabled={!canApplyAsStudent || hasAppliedToJob(job.id)}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium ${
-                  !canApplyAsStudent || hasAppliedToJob(job.id)
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
               >
-                {!canApplyAsStudent
-                  ? "Students Only"
-                  : hasAppliedToJob(job.id)
-                    ? "Applied"
-                    : "Apply Now"}
+                Apply Now
               </button>
               <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm">
                 View Details
@@ -470,7 +458,7 @@ const StudentDashboard = () => {
         const applications = response.data.map((app) => {
           console.log("Processing application:", app);
           return {
-            id: app.id || app._id,
+            id: app._id,
             jobTitle: app.job?.title || "Job Title Not Available",
             company: app.job?.company || "Company Not Available",
             location: app.job?.location || "Location Not Available",
@@ -485,7 +473,7 @@ const StudentDashboard = () => {
               app.updatedAt || app.createdAt,
             ).toLocaleDateString(),
             coverLetter: app.coverLetter || "",
-            jobId: app.job?.id || app.job?._id || app.jobId || null,
+            jobId: app.job?._id,
           };
         });
 
@@ -502,13 +490,6 @@ const StudentDashboard = () => {
         applications: [],
       }));
     }
-  };
-
-  const hasAppliedToJob = (jobId) => {
-    if (!jobId) return false;
-    return dashboardData.applications.some(
-      (app) => String(app.jobId) === String(jobId),
-    );
   };
 
   const renderApplications = () => (
@@ -720,56 +701,26 @@ const StudentDashboard = () => {
       alert("Invalid job. Please try again.");
       return;
     }
-    if (!canApplyAsStudent) {
-      alert("Only students can apply for jobs.");
-      return;
-    }
-    if (hasAppliedToJob(job.id)) {
-      alert("You have already applied to this job.");
-      return;
-    }
     setJobToApply(job);
     setApplyModalOpen(true);
   };
 
-  const handleApplySuccess = (response) => {
+  const handleApplySuccess = () => {
     if (!jobToApply?.id) return;
-    const alreadyApplied = (response?.message || "")
-      .toLowerCase()
-      .includes("already");
-    const jobAlreadyInList = hasAppliedToJob(jobToApply.id);
-
-    if (!jobAlreadyInList) {
-      const newApplication = {
-        id: response?.data?.id || `temp-${jobToApply.id}`,
-        jobTitle: jobToApply?.title,
-        company: jobToApply?.company,
-        appliedDate: new Date().toISOString().split("T")[0],
-        status: response?.data?.status || "pending",
-        lastUpdate: new Date().toISOString().split("T")[0],
-        jobId: jobToApply.id,
-      };
-      setDashboardData((prev) => ({
-        ...prev,
-        applications: [newApplication, ...prev.applications],
-      }));
-    }
-
+    const newApplication = {
+      id: jobToApply.id,
+      jobTitle: jobToApply?.title,
+      company: jobToApply?.company,
+      appliedDate: new Date().toISOString().split("T")[0],
+      status: "pending",
+      lastUpdate: new Date().toISOString().split("T")[0],
+    };
     setDashboardData((prev) => ({
       ...prev,
-      jobs: prev.jobs.map((job) =>
-        String(job.id) === String(jobToApply.id)
-          ? { ...job, applied: true }
-          : job,
-      ),
+      applications: [newApplication, ...prev.applications],
     }));
-    fetchApplications();
     setJobToApply(null);
-    alert(
-      alreadyApplied
-        ? "You already applied to this job."
-        : "Application submitted successfully!",
-    );
+    alert("Application submitted successfully!");
   };
 
   const tabs = [
@@ -1396,18 +1347,9 @@ const StudentDashboard = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApplyJob(job)}
-                    disabled={!canApplyAsStudent || hasAppliedToJob(job.id)}
-                    className={`flex-1 px-3 py-2 rounded-lg text-sm ${
-                      !canApplyAsStudent || hasAppliedToJob(job.id)
-                        ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                    }`}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
                   >
-                    {!canApplyAsStudent
-                      ? "Students Only"
-                      : hasAppliedToJob(job.id)
-                        ? "Applied"
-                        : "Apply"}
+                    Apply
                   </button>
                   <button
                     onClick={() => setActiveTab("jobs")}
@@ -1774,7 +1716,7 @@ const StudentDashboard = () => {
       </div>
 
       <ApplyJobModal
-        open={canApplyAsStudent && applyModalOpen}
+        open={applyModalOpen}
         onOpenChange={setApplyModalOpen}
         job={jobToApply}
         onSuccess={handleApplySuccess}

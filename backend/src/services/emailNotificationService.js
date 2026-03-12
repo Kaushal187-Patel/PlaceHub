@@ -3,10 +3,15 @@ const nodemailer = require('nodemailer');
 class EmailNotificationService {
   constructor() {
     this.emailTransporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT) || 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
   }
@@ -60,6 +65,7 @@ class EmailNotificationService {
 
       await this.emailTransporter.sendMail(mailOptions);
       console.log(`Application confirmation email sent to ${user.email}`);
+      console.log('Preview URL:', nodemailer.getTestMessageUrl(mailOptions));
       return { success: true };
     } catch (error) {
       console.error('Failed to send application email:', error);
