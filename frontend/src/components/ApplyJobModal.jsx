@@ -3,11 +3,11 @@ import { FiBriefcase, FiFileText, FiUpload, FiUser } from "react-icons/fi";
 import applicationService from "../services/applicationService";
 import resumeService from "../services/resumeService";
 import {
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalHeader,
+    ModalTitle,
 } from "./ui/Modal";
 
 const EXPERIENCE_OPTIONS = [

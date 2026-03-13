@@ -37,7 +37,7 @@ const applyForJob = async (req, res) => {
     console.log('Looking for job with ID:', jobId);
     const job = await Job.findByPk(jobId);
     console.log('Job found:', job ? 'Yes' : 'No');
-    
+
     if (!job) {
       return res.status(404).json({
         status: 'error',
@@ -59,7 +59,7 @@ const applyForJob = async (req, res) => {
       if (user) {
         emailNotificationService.sendJobApplicationEmail(user, job).catch(console.error);
       }
-      
+
       return res.status(200).json({
         status: 'success',
         message: 'Application already exists. Notifications sent.',
@@ -232,9 +232,9 @@ const getApplications = async (req, res) => {
       const userIds = [...new Set(applications.map((a) => a.userId))];
       const users = userIds.length
         ? await User.findAll({
-            where: { id: { [Op.in]: userIds } },
-            attributes: ['id', 'name', 'email', 'phone']
-          })
+          where: { id: { [Op.in]: userIds } },
+          attributes: ['id', 'name', 'email', 'phone']
+        })
         : [];
       const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
       applications = applications.map((app) => {
@@ -299,7 +299,7 @@ const updateApplication = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     // Validate status
     const validStatuses = ['pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'hired'];
     if (!validStatuses.includes(status)) {
@@ -322,7 +322,7 @@ const updateApplication = async (req, res) => {
         }
       ]
     });
-    
+
     if (!application) {
       return res.status(404).json({
         status: 'error',
@@ -480,7 +480,7 @@ const deleteApplication = async (req, res) => {
 const getMyApplications = async (req, res) => {
   try {
     console.log('Fetching applications for user:', req.user.id);
-    
+
     const applications = await Application.findAll({
       where: { userId: req.user.id },
       include: [

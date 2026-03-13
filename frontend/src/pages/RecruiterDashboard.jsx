@@ -11,7 +11,6 @@ import {
   FiDownload,
   FiEye,
   FiFileText,
-  FiMessageSquare,
   FiPlus,
   FiSettings,
   FiStar,
@@ -26,8 +25,7 @@ import {
 import { useSelector } from "react-redux";
 import JobDeadlineExtension from "../components/JobDeadlineExtension";
 import applicationService from "../services/applicationService";
-import jobService from "../services/jobService";
-import messageService from "../services/messageService";
+import jobService from "../services/jobService";  
 
 const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -55,12 +53,6 @@ const RecruiterDashboard = () => {
   const [jobsError, setJobsError] = useState(null);
   const [applicationsError, setApplicationsError] = useState(null);
 
-  const [hubConversations, setHubConversations] = useState([]);
-  const [hubSelectedId, setHubSelectedId] = useState(null);
-  const [hubMessages, setHubMessages] = useState([]);
-  const [hubLoading, setHubLoading] = useState(false);
-  const [hubMessageInput, setHubMessageInput] = useState("");
-  const [hubSending, setHubSending] = useState(false);
 
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [interviewModalApplication, setInterviewModalApplication] =
@@ -114,7 +106,6 @@ const RecruiterDashboard = () => {
     { id: "jobs", label: "Job Management", icon: FiBriefcase },
     { id: "applicants", label: "Applicant Tracking", icon: FiUsers },
     { id: "analytics", label: "Analytics & Reports", icon: FiBarChart2 },
-    { id: "messages", label: "Communication", icon: FiMessageSquare },
     { id: "profile", label: "Profile & Team", icon: FiUser },
     { id: "settings", label: "Settings", icon: FiSettings },
   ];
@@ -484,44 +475,6 @@ const RecruiterDashboard = () => {
     checkExtensionRequired();
   }, []);
 
-  useEffect(() => {
-    if (activeTab !== "messages") return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const list = await messageService.getConversations();
-        if (!cancelled) setHubConversations(list);
-      } catch (err) {
-        if (!cancelled) console.error("Failed to load conversations:", err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (!hubSelectedId) {
-      setHubMessages([]);
-      return;
-    }
-    let cancelled = false;
-    setHubLoading(true);
-    messageService
-      .getConversationWithMessages(hubSelectedId)
-      .then((data) => {
-        if (!cancelled) setHubMessages(data.messages || []);
-      })
-      .catch((err) => {
-        if (!cancelled) console.error("Failed to load messages:", err);
-      })
-      .finally(() => {
-        if (!cancelled) setHubLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [hubSelectedId]);
 
   const checkExtensionRequired = async () => {
     try {
@@ -1704,9 +1657,6 @@ const RecruiterDashboard = () => {
                 <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
                   View Profile
                 </button>
-                <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg">
-                  <FiMessageSquare className="h-4 w-4" />
-                </button>
               </div>
             </div>
           </div>
@@ -1870,23 +1820,8 @@ const RecruiterDashboard = () => {
     </div>
   );
 
-  const handleSendMessageInHub = async (e) => {
-    e.preventDefault();
-    const body = hubMessageInput.trim();
-    if (!body || !hubSelectedId || hubSending) return;
-    setHubSending(true);
-    try {
-      const msg = await messageService.sendMessage(hubSelectedId, body);
-      setHubMessages((prev) => [...prev, msg]);
-      setHubMessageInput("");
-    } catch (err) {
-      alert(err.message || "Failed to send message.");
-    } finally {
-      setHubSending(false);
-    }
-  };
 
-  const renderCommunicationHub = () => {
+  /* const renderCommunicationHub = () => {
     const selectedConv = hubConversations.find((c) => c.id === hubSelectedId);
     return (
       <div className="space-y-6">
@@ -2039,7 +1974,7 @@ const RecruiterDashboard = () => {
         </div>
       </div>
     );
-  };
+  */
 
   const renderProfileTeam = () => (
     <div className="space-y-6">
@@ -2318,8 +2253,7 @@ const RecruiterDashboard = () => {
         return renderApplicantTracking();
       case "analytics":
         return renderAnalytics();
-      case "messages":
-        return renderCommunicationHub();
+
       case "profile":
         return renderProfileTeam();
       case "settings":
