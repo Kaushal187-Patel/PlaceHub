@@ -1,7 +1,6 @@
-import { useRef, useState } from "react";
-import { FiBriefcase, FiFileText, FiUpload, FiUser } from "react-icons/fi";
+import { useState } from "react";
+import { FiBriefcase, FiFileText, FiUser } from "react-icons/fi";
 import applicationService from "../services/applicationService";
-import resumeService from "../services/resumeService";
 import {
     Modal,
     ModalBody,
@@ -22,50 +21,20 @@ const EXPERIENCE_OPTIONS = [
 const ApplyJobModal = ({ open, onOpenChange, job, onSuccess, onError }) => {
   const [experience, setExperience] = useState("");
   const [currentJob, setCurrentJob] = useState("");
-  const [resumeFile, setResumeFile] = useState(null);
-  const [useLatestResume, setUseLatestResume] = useState(true);
+  const [resumeLink, setResumeLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const fileInputRef = useRef(null);
 
   const resetForm = () => {
     setExperience("");
     setCurrentJob("");
-    setResumeFile(null);
-    setUseLatestResume(true);
+    setResumeLink("");
     setError("");
   };
 
   const handleClose = () => {
     resetForm();
     onOpenChange(false);
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validTypes = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
-      if (!validTypes.includes(file.type)) {
-        setError("Please upload PDF or Word (DOC/DOCX) only.");
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        setError("File must be under 10MB.");
-        return;
-      }
-      setResumeFile(file);
-      setUseLatestResume(false);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setResumeFile(null);
-    setUseLatestResume(true);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e) => {
@@ -75,34 +44,22 @@ const ApplyJobModal = ({ open, onOpenChange, job, onSuccess, onError }) => {
       setError("Please select your experience.");
       return;
     }
+    if (!resumeLink.trim()) {
+      setError("Please add your resume Drive link.");
+      return;
+    }
     if (!job?.id) {
       onError?.(new Error("Invalid job"));
       return;
     }
 
     setSubmitting(true);
-    let resumeId = null;
 
     try {
-      if (resumeFile) {
-        try {
-          const analyzeRes = await resumeService.analyzeResume(resumeFile);
-          if (analyzeRes?.data?.resumeId) resumeId = analyzeRes.data.resumeId;
-        } catch (resumeErr) {
-          setError(
-            `Resume upload failed: ${
-              resumeErr.message || "Please try again or use your latest resume."
-            }`,
-          );
-          setSubmitting(false);
-          return;
-        }
-      }
-
       const response = await applicationService.applyForJobWithDetails(job.id, {
         experience: experience.trim(),
         currentJob: currentJob.trim() || undefined,
-        resumeId: resumeId || undefined,
+        resumeLink: resumeLink.trim(),
       });
 
       handleClose();
@@ -166,55 +123,22 @@ const ApplyJobModal = ({ open, onOpenChange, job, onSuccess, onError }) => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Resume <span className="text-red-500">*</span>
               </label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useLatestResume && !resumeFile}
-                    onChange={(e) => {
-                      setUseLatestResume(e.target.checked);
-                      if (e.target.checked) handleRemoveFile();
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Use my latest uploaded resume
-                  </span>
-                </label>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Or upload a new resume for this application
-                </p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Paste the public link to your resume from Drive.
+              </p>
+              <div className="relative">
+                <FiFileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileChange}
-                  className="hidden"
+                  type="url"
+                  value={resumeLink}
+                  onChange={(e) => setResumeLink(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
+                  required
                 />
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-600"
-                  >
-                    <FiUpload className="h-4 w-4" />
-                    Choose file
-                  </button>
-                  {resumeFile && (
-                    <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                      <FiFileText className="h-4 w-4" />
-                      {resumeFile.name}
-                      <button
-                        type="button"
-                        onClick={handleRemoveFile}
-                        className="text-red-500 hover:text-red-600 text-xs"
-                      >
-                        Remove
-                      </button>
-                    </span>
-                  )}
-                </div>
               </div>
+            </div>
             </div>
 
             {/* Current job (optional) */}

@@ -14,7 +14,7 @@ const applyForJob = async (req, res) => {
     });
 
     const { jobId } = req.params;
-    const { coverLetter, experience, currentJob, resumeId } = req.body;
+    const { coverLetter, experience, currentJob, resumeId, resumeLink } = req.body;
     const userId = req.user.id;
 
     if (!jobId || jobId === 'undefined') {
@@ -94,6 +94,7 @@ const applyForJob = async (req, res) => {
       coverLetter: coverLetter || '',
       experience: experience || null,
       currentJob: currentJob || null,
+      resumeLink: resumeLink || null,
       status: 'pending'
     };
 
@@ -182,7 +183,7 @@ const getApplications = async (req, res) => {
 
     const recruiterId = req.user.id;
     let applications = await Application.findAll({
-      attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'createdAt', 'lastUpdated'],
+      attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'resumeLink', 'createdAt', 'lastUpdated'],
       include: [
         {
           model: User,
@@ -211,7 +212,7 @@ const getApplications = async (req, res) => {
 
     if (applications === null) {
       applications = await Application.findAll({
-        attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'createdAt', 'lastUpdated'],
+        attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'resumeLink', 'createdAt', 'lastUpdated'],
         include: [
           {
             model: Job,

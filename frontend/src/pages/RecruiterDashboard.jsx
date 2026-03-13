@@ -142,6 +142,7 @@ const RecruiterDashboard = () => {
               : null,
             resumeFilename:
               app.resume?.originalName || app.resume?.filename || null,
+            resumeLink: app.resumeLink || null,
           };
         });
         const shortlisted = apps.filter(
@@ -213,6 +214,15 @@ const RecruiterDashboard = () => {
       candidateEmail: application.email,
       fullApplication: application,
     });
+
+    // If a Drive/public link is available, open it directly
+    if (application.resumeLink) {
+      const url = application.resumeLink;
+      if (typeof window !== "undefined") {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
 
     // Try multiple ways to get resumeId
     const resumeId =
@@ -286,14 +296,12 @@ const RecruiterDashboard = () => {
     }
 
     if (!resumeId) {
-      console.error("No resume ID found. Application data:", {
+      console.error("No resume ID or link found. Application data:", {
         resumeId: application.resumeId,
         resume: application.resume,
         hasResumeObject: !!application.resume,
+        resumeLink: application.resumeLink,
       });
-      alert(
-        "No resume available for this application. The candidate may not have uploaded a resume when applying.",
-      );
       return;
     }
 
@@ -1376,6 +1384,7 @@ const RecruiterDashboard = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Skills & Experience
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" />
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
@@ -1464,6 +1473,19 @@ const RecruiterDashboard = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
+                        {app.resumeLink && (
+                          <a
+                            href={app.resumeLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm break-all"
+                          >
+                            <FiFileText className="h-4 w-4" />
+                            <span>Drive resume</span>
+                          </a>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         <select
                           value={app.status}
                           onChange={(e) =>
@@ -1494,13 +1516,6 @@ const RecruiterDashboard = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewResume(app)}
-                            className="text-blue-600 hover:text-blue-700"
-                            title="View Resume"
-                          >
-                            <FiFileText className="h-4 w-4" />
-                          </button>
                           <button
                             onClick={() => handleShortlist(app.id)}
                             className="text-green-600 hover:text-green-700"

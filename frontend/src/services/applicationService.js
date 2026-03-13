@@ -15,9 +15,9 @@ const applyForJob = async (jobId, applicationData = {}) => {
   }
 };
 
-// Apply with experience, resume, current job (for modal)
-const applyForJobWithDetails = async (jobId, { experience, currentJob, resumeId, coverLetter }) => {
-  return applyForJob(jobId, { experience, currentJob, resumeId, coverLetter });
+// Apply with experience, resume (link or id), current job (for modal)
+const applyForJobWithDetails = async (jobId, { experience, currentJob, resumeId, resumeLink, coverLetter }) => {
+  return applyForJob(jobId, { experience, currentJob, resumeId, resumeLink, coverLetter });
 };
 
 const getMyApplications = async () => {
