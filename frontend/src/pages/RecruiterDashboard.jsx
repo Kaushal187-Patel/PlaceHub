@@ -100,6 +100,8 @@ const RecruiterDashboard = () => {
       },
     ],
   });
+  const [showCandidateProfile, setShowCandidateProfile] = useState(false);
+  const [candidateProfile, setCandidateProfile] = useState(null);
 
   const tabs = [
     { id: "overview", label: "Overview", icon: FiTrendingUp },
@@ -118,6 +120,29 @@ const RecruiterDashboard = () => {
       const list = Array.isArray(response?.data) ? response.data : [];
       if (response?.status === "success") {
         const apps = list.map((app) => {
+          const userExpArray = Array.isArray(app.user?.experience)
+            ? app.user.experience
+            : [];
+          const primaryExperience =
+            app.experience && typeof app.experience === "string"
+              ? app.experience
+              : userExpArray.length > 0
+                ? `${userExpArray[0].position || ""}${
+                    userExpArray[0].company ? ` at ${userExpArray[0].company}` : ""
+                  }`
+                : "—";
+          const userSkills = Array.isArray(app.user?.skills)
+            ? app.user.skills
+            : app.user?.skills
+              ? [app.user.skills]
+              : [];
+          const jobSkills = Array.isArray(app.job?.skills)
+            ? app.job.skills
+            : app.job?.skills
+              ? [app.job.skills]
+              : [];
+          const combinedSkills = [...new Set([...userSkills, ...jobSkills])];
+
           return {
             id: app.id,
             candidateName: app.user?.name ?? "—",
@@ -128,13 +153,9 @@ const RecruiterDashboard = () => {
               ? new Date(app.createdAt).toLocaleDateString()
               : "—",
             status: app.status ?? "pending",
-            skills: Array.isArray(app.job?.skills)
-              ? app.job.skills
-              : app.job?.skills
-                ? [app.job.skills]
-                : [],
-            experience: "—",
-            location: app.job?.location ?? "—",
+            skills: combinedSkills,
+            experience: primaryExperience,
+            location: app.user?.location ?? app.job?.location ?? "—",
             resumeId: app.resumeId || app.resume?.id || null,
             resume: app.resume || null,
             resumeUrl: app.resume?.filePath
@@ -143,6 +164,7 @@ const RecruiterDashboard = () => {
             resumeFilename:
               app.resume?.originalName || app.resume?.filename || null,
             resumeLink: app.resumeLink || null,
+            fullUser: app.user || null,
           };
         });
         const shortlisted = apps.filter(
@@ -1421,14 +1443,22 @@ const RecruiterDashboard = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!app.fullUser) return;
+                            setCandidateProfile(app.fullUser);
+                            setShowCandidateProfile(true);
+                          }}
+                          className="flex items-center text-left w-full hover:opacity-90"
+                        >
                           <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                             <span className="text-sm font-medium text-white">
                               {app.candidateName.charAt(0)}
                             </span>
                           </div>
                           <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white underline">
                               {app.candidateName}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -1438,7 +1468,7 @@ const RecruiterDashboard = () => {
                               {app.location}
                             </div>
                           </div>
-                        </div>
+                        </button>
                       </td>
                       <td className="px-6 py-4">
                         <div>
@@ -1453,7 +1483,7 @@ const RecruiterDashboard = () => {
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm text-gray-900 dark:text-white">
-                            {app.experience} experience
+                            {app.experience}
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {app.skills.slice(0, 3).map((skill, index) => (
@@ -1536,6 +1566,17 @@ const RecruiterDashboard = () => {
                             title="Reject"
                           >
                             <FiX className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!app.fullUser) return;
+                              setCandidateProfile(app.fullUser);
+                              setShowCandidateProfile(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-700"
+                            title="View full profile"
+                          >
+                            <FiUser className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteApplication(app.id)}
@@ -2317,6 +2358,166 @@ const RecruiterDashboard = () => {
       {/* Extension Popup */}
       {showExtensionPopup && (
         <JobDeadlineExtension onClose={() => setShowExtensionPopup(false)} />
+      )}
+
+      {/* Candidate profile modal */}
+      {showCandidateProfile && candidateProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Candidate profile
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCandidateProfile(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+              >
+                <FiX className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-lg">
+                  {candidateProfile.name?.charAt(0) || "S"}
+                </div>
+                <div>
+                  <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {candidateProfile.name}
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {candidateProfile.email}
+                  </p>
+                  {candidateProfile.phone && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {candidateProfile.phone}
+                    </p>
+                  )}
+                  {candidateProfile.location && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {candidateProfile.location}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {candidateProfile.bio && (
+                <div>
+                  <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Summary
+                  </h5>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {candidateProfile.bio}
+                  </p>
+                </div>
+              )}
+
+              {Array.isArray(candidateProfile.skills) &&
+                candidateProfile.skills.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                      Skills
+                    </h5>
+                    <div className="flex flex-wrap gap-1">
+                      {candidateProfile.skills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Experience
+                  </h5>
+                  {Array.isArray(candidateProfile.experience) &&
+                  candidateProfile.experience.length > 0 ? (
+                    <div className="space-y-2">
+                      {candidateProfile.experience.map((exp, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 border border-gray-200 dark:border-gray-700 rounded-md"
+                        >
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {exp.position || "Role"}{" "}
+                            {exp.company ? `at ${exp.company}` : ""}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {exp.startDate
+                              ? new Date(exp.startDate).toLocaleDateString()
+                              : ""}
+                            {" - "}
+                            {exp.current
+                              ? "Present"
+                              : exp.endDate
+                                ? new Date(exp.endDate).toLocaleDateString()
+                                : ""}
+                          </div>
+                          {exp.description && (
+                            <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                              {exp.description}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      No experience added yet.
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Education
+                  </h5>
+                  {Array.isArray(candidateProfile.education) &&
+                  candidateProfile.education.length > 0 ? (
+                    <div className="space-y-2">
+                      {candidateProfile.education.map((edu, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 border border-gray-200 dark:border-gray-700 rounded-md"
+                        >
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {edu.degree || "Degree"}
+                            {edu.field ? ` in ${edu.field}` : ""}
+                          </div>
+                          {edu.institution && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {edu.institution}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {edu.startDate
+                              ? new Date(edu.startDate).toLocaleDateString()
+                              : ""}
+                            {" - "}
+                            {edu.current
+                              ? "Present"
+                              : edu.endDate
+                                ? new Date(edu.endDate).toLocaleDateString()
+                                : ""}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      No education added yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Schedule Interview modal */}

@@ -705,20 +705,32 @@ const StudentDashboard = () => {
     setApplyModalOpen(true);
   };
 
-  const handleApplySuccess = () => {
-    if (!jobToApply?.id) return;
+  const handleApplySuccess = (result) => {
+    // Prefer fresh data from backend response when available
+    const payload = result?.data;
+    const now = new Date();
+    const appliedDate =
+      payload?.appliedAt || now.toISOString().split("T")[0];
+
     const newApplication = {
-      id: jobToApply.id,
-      jobTitle: jobToApply?.title,
-      company: jobToApply?.company,
-      appliedDate: new Date().toISOString().split("T")[0],
-      status: "pending",
-      lastUpdate: new Date().toISOString().split("T")[0],
+      id: payload?.id || jobToApply?.id,
+      jobTitle: payload?.jobTitle || jobToApply?.title,
+      company: payload?.company || jobToApply?.company,
+      appliedDate: new Date(appliedDate).toLocaleDateString(),
+      status: payload?.status || "pending",
+      lastUpdate: now.toISOString().split("T")[0],
     };
+
     setDashboardData((prev) => ({
       ...prev,
-      applications: [newApplication, ...prev.applications],
+      applications: [newApplication, ...(prev.applications || [])],
     }));
+
+    // Refresh from server so "My Applications" and "Career Progress"
+    // reflect the latest data, including interview status updates later.
+    fetchApplications();
+    fetchProgressStats();
+
     setJobToApply(null);
     alert("Application submitted successfully!");
   };
@@ -781,7 +793,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
@@ -794,22 +806,6 @@ const StudentDashboard = () => {
             </div>
             <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
               <FiBriefcase className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Resume Score
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboardData.profile?.resumeAnalysis?.score || 0}%
-              </p>
-            </div>
-            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-              <FiFileText className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>

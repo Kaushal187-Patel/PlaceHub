@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  FiEdit,
   FiGithub,
   FiGlobe,
   FiLink,
@@ -7,6 +8,7 @@ import {
   FiMail,
   FiMapPin,
   FiPhone,
+  FiTrash2,
   FiUser,
 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,6 +34,8 @@ const Profile = () => {
     experience: [],
     education: [],
   });
+  const [editingExperienceIndex, setEditingExperienceIndex] = useState(null);
+  const [editingEducationIndex, setEditingEducationIndex] = useState(null);
 
   useEffect(() => {
     dispatch(getProfile());
@@ -243,23 +247,66 @@ const Profile = () => {
                   {formData.experience.map((exp, index) => (
                     <div
                       key={index}
-                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-md"
+                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-md flex justify-between items-start gap-3"
                     >
-                      <div className="text-sm font-medium">
-                        {exp.position} at {exp.company}
+                      <div>
+                        <div className="text-sm font-medium">
+                          {exp.position || "Role"}{" "}
+                          {exp.company ? `at ${exp.company}` : ""}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {exp.startDate
+                            ? new Date(exp.startDate).toLocaleDateString()
+                            : ""}
+                          {" - "}
+                          {exp.current
+                            ? "Present"
+                            : exp.endDate
+                              ? new Date(exp.endDate).toLocaleDateString()
+                              : ""}
+                        </div>
+                        {exp.description && (
+                          <div className="text-sm mt-1">{exp.description}</div>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {exp.startDate &&
-                          new Date(exp.startDate).toLocaleDateString()}{" "}
-                        -
-                        {exp.current
-                          ? "Present"
-                          : exp.endDate &&
-                            new Date(exp.endDate).toLocaleDateString()}
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              newExperience: { ...exp },
+                            }));
+                            setEditingExperienceIndex(index);
+                          }}
+                          className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        >
+                          <FiEdit className="mr-1 h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              experience: prev.experience.filter(
+                                (_, i) => i !== index,
+                              ),
+                            }));
+                            if (editingExperienceIndex === index) {
+                              setEditingExperienceIndex(null);
+                              setFormData((prev) => ({
+                                ...prev,
+                                newExperience: {},
+                              }));
+                            }
+                          }}
+                          className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          <FiTrash2 className="mr-1 h-3 w-3" />
+                          Delete
+                        </button>
                       </div>
-                      {exp.description && (
-                        <div className="text-sm mt-1">{exp.description}</div>
-                      )}
                     </div>
                   ))}
                   {formData.experience.length === 0 && (
@@ -267,6 +314,118 @@ const Profile = () => {
                       No experience added yet
                     </div>
                   )}
+                </div>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    name="newExperiencePosition"
+                    placeholder="Position (e.g. Frontend Intern)"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newExperience?.position || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newExperience: {
+                          ...(prev.newExperience || {}),
+                          position: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="text"
+                    name="newExperienceCompany"
+                    placeholder="Company"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newExperience?.company || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newExperience: {
+                          ...(prev.newExperience || {}),
+                          company: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="date"
+                    name="newExperienceStartDate"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newExperience?.startDate || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newExperience: {
+                          ...(prev.newExperience || {}),
+                          startDate: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="date"
+                    name="newExperienceEndDate"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newExperience?.endDate || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newExperience: {
+                          ...(prev.newExperience || {}),
+                          endDate: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <textarea
+                    name="newExperienceDescription"
+                    rows={3}
+                    placeholder="Brief description (optional)"
+                    className="md:col-span-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newExperience?.description || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newExperience: {
+                          ...(prev.newExperience || {}),
+                          description: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!formData.newExperience?.position) return;
+                      if (
+                        editingExperienceIndex !== null &&
+                        editingExperienceIndex >= 0
+                      ) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          experience: prev.experience.map((exp, i) =>
+                            i === editingExperienceIndex
+                              ? prev.newExperience
+                              : exp,
+                          ),
+                          newExperience: {},
+                        }));
+                        setEditingExperienceIndex(null);
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          experience: [...prev.experience, prev.newExperience],
+                          newExperience: {},
+                        }));
+                      }
+                    }}
+                    className="md:col-span-2 inline-flex justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md"
+                  >
+                    {editingExperienceIndex !== null
+                      ? "Update Experience"
+                      : "Add Experience"}
+                  </button>
                 </div>
               </div>
 
@@ -279,22 +438,65 @@ const Profile = () => {
                   {formData.education.map((edu, index) => (
                     <div
                       key={index}
-                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-md"
+                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-md flex justify-between items-start gap-3"
                     >
-                      <div className="text-sm font-medium">
-                        {edu.degree} in {edu.field}
+                      <div>
+                        <div className="text-sm font-medium">
+                          {edu.degree || "Degree"}
+                          {edu.field ? ` in ${edu.field}` : ""}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {edu.institution}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {edu.startDate
+                            ? new Date(edu.startDate).toLocaleDateString()
+                            : ""}
+                          {" - "}
+                          {edu.current
+                            ? "Present"
+                            : edu.endDate
+                              ? new Date(edu.endDate).toLocaleDateString()
+                              : ""}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {edu.institution}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {edu.startDate &&
-                          new Date(edu.startDate).toLocaleDateString()}{" "}
-                        -
-                        {edu.current
-                          ? "Present"
-                          : edu.endDate &&
-                            new Date(edu.endDate).toLocaleDateString()}
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              newEducation: { ...edu },
+                            }));
+                            setEditingEducationIndex(index);
+                          }}
+                          className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        >
+                          <FiEdit className="mr-1 h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              education: prev.education.filter(
+                                (_, i) => i !== index,
+                              ),
+                            }));
+                            if (editingEducationIndex === index) {
+                              setEditingEducationIndex(null);
+                              setFormData((prev) => ({
+                                ...prev,
+                                newEducation: {},
+                              }));
+                            }
+                          }}
+                          className="inline-flex items-center px-2 py-1 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          <FiTrash2 className="mr-1 h-3 w-3" />
+                          Delete
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -303,6 +505,118 @@ const Profile = () => {
                       No education added yet
                     </div>
                   )}
+                </div>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    name="newEducationDegree"
+                    placeholder="Degree (e.g. B.Sc.)"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newEducation?.degree || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newEducation: {
+                          ...(prev.newEducation || {}),
+                          degree: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="text"
+                    name="newEducationField"
+                    placeholder="Field of study"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newEducation?.field || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newEducation: {
+                          ...(prev.newEducation || {}),
+                          field: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="text"
+                    name="newEducationInstitution"
+                    placeholder="Institution"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newEducation?.institution || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newEducation: {
+                          ...(prev.newEducation || {}),
+                          institution: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="date"
+                    name="newEducationStartDate"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newEducation?.startDate || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newEducation: {
+                          ...(prev.newEducation || {}),
+                          startDate: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <input
+                    type="date"
+                    name="newEducationEndDate"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    value={formData.newEducation?.endDate || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        newEducation: {
+                          ...(prev.newEducation || {}),
+                          endDate: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!formData.newEducation?.degree) return;
+                      if (
+                        editingEducationIndex !== null &&
+                        editingEducationIndex >= 0
+                      ) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          education: prev.education.map((edu, i) =>
+                            i === editingEducationIndex
+                              ? prev.newEducation
+                              : edu,
+                          ),
+                          newEducation: {},
+                        }));
+                        setEditingEducationIndex(null);
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          education: [...prev.education, prev.newEducation],
+                          newEducation: {},
+                        }));
+                      }
+                    }}
+                    className="md:col-span-2 inline-flex justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md"
+                  >
+                    {editingEducationIndex !== null
+                      ? "Update Education"
+                      : "Add Education"}
+                  </button>
                 </div>
               </div>
 

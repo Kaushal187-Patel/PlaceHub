@@ -183,12 +183,38 @@ const getApplications = async (req, res) => {
 
     const recruiterId = req.user.id;
     let applications = await Application.findAll({
-      attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'resumeLink', 'createdAt', 'lastUpdated'],
+      attributes: [
+        'id',
+        'userId',
+        'jobId',
+        'status',
+        'coverLetter',
+        'experience',
+        'currentJob',
+        'resumeId',
+        'resumeLink',
+        'createdAt',
+        'lastUpdated'
+      ],
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'name', 'email', 'phone']
+          // Include richer student profile so recruiters can view it
+          attributes: [
+            'id',
+            'name',
+            'email',
+            'phone',
+            'location',
+            'bio',
+            'website',
+            'linkedin',
+            'github',
+            'skills',
+            'experience',
+            'education'
+          ]
         },
         {
           model: Job,
@@ -212,7 +238,19 @@ const getApplications = async (req, res) => {
 
     if (applications === null) {
       applications = await Application.findAll({
-        attributes: ['id', 'userId', 'jobId', 'status', 'coverLetter', 'experience', 'currentJob', 'resumeId', 'resumeLink', 'createdAt', 'lastUpdated'],
+        attributes: [
+          'id',
+          'userId',
+          'jobId',
+          'status',
+          'coverLetter',
+          'experience',
+          'currentJob',
+          'resumeId',
+          'resumeLink',
+          'createdAt',
+          'lastUpdated'
+        ],
         include: [
           {
             model: Job,
@@ -234,7 +272,20 @@ const getApplications = async (req, res) => {
       const users = userIds.length
         ? await User.findAll({
           where: { id: { [Op.in]: userIds } },
-          attributes: ['id', 'name', 'email', 'phone']
+          attributes: [
+            'id',
+            'name',
+            'email',
+            'phone',
+            'location',
+            'bio',
+            'website',
+            'linkedin',
+            'github',
+            'skills',
+            'experience',
+            'education'
+          ]
         })
         : [];
       const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
