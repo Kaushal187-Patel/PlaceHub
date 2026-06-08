@@ -12,6 +12,7 @@ const {
 } = require('../controllers/auth');
 
 const { protect } = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiter');
 const passport = require('../config/passport');
 
 const router = express.Router();
@@ -86,15 +87,15 @@ const updatePasswordValidation = [
     .withMessage('New password must contain at least one uppercase letter, one lowercase letter, and one number')
 ];
 
-// Auth routes
-router.post('/register', registerValidation, register);
-router.post('/login', loginValidation, login);
+// Auth routes (brute-force sensitive endpoints are rate-limited)
+router.post('/register', authLimiter, registerValidation, register);
+router.post('/login', authLimiter, loginValidation, login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
 router.put('/updatedetails', protect, updateDetailsValidation, updateDetails);
 router.put('/updatepassword', protect, updatePasswordValidation, updatePassword);
-router.post('/forgotpassword', forgotPasswordValidation, forgotPassword);
-router.put('/resetpassword/:resettoken', resetPasswordValidation, resetPassword);
+router.post('/forgotpassword', authLimiter, forgotPasswordValidation, forgotPassword);
+router.put('/resetpassword/:resettoken', authLimiter, resetPasswordValidation, resetPassword);
 
 // OAuth routes with strategy availability check
 router.get('/google', (req, res, next) => {

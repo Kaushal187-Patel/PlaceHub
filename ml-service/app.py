@@ -9,7 +9,13 @@ from services.chatbot_ml import ChatbotML
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+
+# Restrict CORS to the trusted backend origin instead of allowing every site.
+_allowed_origins = os.getenv('ALLOWED_ORIGINS') or os.getenv('BACKEND_URL', 'http://localhost:5001')
+CORS(app, origins=[o.strip() for o in _allowed_origins.split(',') if o.strip()])
+
+# Cap request body size to mitigate memory-exhaustion via large uploads (default 10MB).
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 10 * 1024 * 1024))
 
 # Initialize ML services
 career_recommender = CareerRecommender()
@@ -23,7 +29,11 @@ def health_check():
 @app.route('/api/career/recommend', methods=['POST'])
 def recommend_career():
     try:
-        data = request.json
+        if not request.is_json:
+            return jsonify({'error': 'Request body must be JSON'}), 400
+        data = request.get_json(silent=True)
+        if data is None:
+            return jsonify({'error': 'Invalid or empty JSON body'}), 400
         result = career_recommender.predict(data)
         return jsonify(result)
     except Exception as e:
@@ -46,7 +56,7 @@ def analyze_resume():
 @app.route('/api/chatbot/career-advice', methods=['POST'])
 def chatbot_career_advice():
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
         user_input = data.get('message', '')
         
         recommendations = chatbot_ml.get_career_recommendations(user_input)
@@ -57,7 +67,7 @@ def chatbot_career_advice():
 @app.route('/api/chatbot/skills-gap', methods=['POST'])
 def chatbot_skills_gap():
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
         user_skills = data.get('skills', [])
         target_career = data.get('career', '')
         
@@ -67,5 +77,6 @@ def chatbot_skills_gap():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5001))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    port = int(os.getenv('PORT', 5002))
+    debug = os.getenv('FLASK_ENV', 'production').lower() == 'development'
+    app.run(debug=debug, host='0.0.0.0', port=port)

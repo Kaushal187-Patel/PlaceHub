@@ -1,58 +1,54 @@
-const Notification = require('../models/Notification');
+const { fn, col, literal } = require('sequelize');
+const { Notification, Application } = require('../models');
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
 // @access  Private
-const getUserNotifications = async (req, res) => {
+const getUserNotifications = async (req, res, next) => {
   try {
-    const notifications = await Notification.find({ user: req.user.id })
-      .populate('application')
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+    const offset = parseInt(req.query.offset, 10) || 0;
+
+    const { rows: notifications, count } = await Notification.findAndCountAll({
+      where: { userId: req.user.id },
+      include: [{ model: Application, as: 'application' }],
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
 
     res.status(200).json({
       status: 'success',
-      count: notifications.length,
+      count,
       data: notifications
     });
   } catch (error) {
-    console.error('Get notifications error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to fetch notifications',
-      error: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Get notification statistics
 // @route   GET /api/notifications/stats
 // @access  Private
-const getNotificationStats = async (req, res) => {
+const getNotificationStats = async (req, res, next) => {
   try {
-    const stats = await Notification.aggregate([
-      { $match: { user: req.user._id } },
-      {
-        $group: {
-          _id: '$type',
-          total: { $sum: 1 },
-          sent: { $sum: { $cond: [{ $eq: ['$status', 'sent'] }, 1, 0] } },
-          failed: { $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] } }
-        }
-      }
-    ]);
+    const stats = await Notification.findAll({
+      where: { userId: req.user.id },
+      attributes: [
+        'type',
+        [fn('COUNT', col('id')), 'total'],
+        [fn('SUM', literal("CASE WHEN status = 'sent' THEN 1 ELSE 0 END")), 'sent'],
+        [fn('SUM', literal("CASE WHEN status = 'failed' THEN 1 ELSE 0 END")), 'failed']
+      ],
+      group: ['type']
+    });
 
     res.status(200).json({
       status: 'success',
       data: stats
     });
   } catch (error) {
-    console.error('Get notification stats error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to fetch notification statistics',
-      error: error.message
-    });
+    next(error);
   }
 };
 

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /student-dashboard
+Disallow: /recruiter-dashboard
+Disallow: /profile
+Disallow: /auth/success
+
+Sitemap: https://placehub.example.com/sitemap.xml

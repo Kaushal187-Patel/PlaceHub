@@ -1,33 +1,39 @@
+import { lazy, Suspense } from "react";
 import { Provider } from "react-redux";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LoadingSpinner from "./components/LoadingSpinner";
 import MainLayout from "./layouts/MainLayout";
-import About from "./pages/About";
-import AuthSuccess from "./pages/AuthSuccess";
-import CareerRecommendations from "./pages/CareerRecommendations";
-import Contact from "./pages/Contact";
-import Dashboard from "./pages/Dashboard";
-import ForgotPassword from "./pages/ForgotPassword";
-import Home from "./pages/Home";
-import Jobs from "./pages/Jobs";
-import Login from "./pages/Login";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Profile from "./pages/Profile";
-import RecruiterDashboard from "./pages/RecruiterDashboard";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import ResumeAnalyzer from "./pages/ResumeAnalyzer";
-import StudentDashboard from "./pages/StudentDashboard";
-import TermsOfService from "./pages/TermsOfService";
 import { store } from "./store";
+
+// Route-level code splitting: each page becomes its own lazily-loaded chunk so
+// the initial bundle no longer ships every dashboard/page up front.
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
+const Jobs = lazy(() => import("./pages/Jobs"));
+const CareerRecommendations = lazy(() => import("./pages/CareerRecommendations"));
+const ResumeAnalyzer = lazy(() => import("./pages/ResumeAnalyzer"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 function App() {
   return (
     <Provider store={store}>
       <Router>
         <div className="App">
+          <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
@@ -81,6 +87,7 @@ function App() {
               />
             </Route>
           </Routes>
+          </Suspense>
           <ToastContainer
             position="top-right"
             autoClose={5000}

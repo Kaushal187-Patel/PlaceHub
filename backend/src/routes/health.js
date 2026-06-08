@@ -1,9 +1,10 @@
 const express = require('express');
 const axios = require('axios');
+const { sequelize } = require('../config/database');
 
 const router = express.Router();
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5002';
 
 router.get('/status', async (req, res) => {
   const status = {
@@ -20,16 +21,17 @@ router.get('/status', async (req, res) => {
     status.mlService = 'unavailable';
   }
 
-  // Check database
+  // Check database (PostgreSQL via Sequelize)
   try {
-    const mongoose = require('mongoose');
-    status.database = mongoose.connection.readyState === 1 ? 'healthy' : 'disconnected';
+    await sequelize.authenticate();
+    status.database = 'healthy';
   } catch (error) {
-    status.database = 'error';
+    status.database = 'disconnected';
   }
 
-  res.json({
-    status: 'success',
+  const allHealthy = status.database === 'healthy';
+  res.status(allHealthy ? 200 : 503).json({
+    status: allHealthy ? 'success' : 'degraded',
     services: status,
     timestamp: new Date().toISOString()
   });

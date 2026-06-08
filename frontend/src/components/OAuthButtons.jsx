@@ -1,12 +1,17 @@
 import React from 'react';
 
+// Resolve the API base the same way api.js does, then make it absolute for a
+// full-page OAuth redirect (relative "/api" is proxied to the backend in dev).
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:5001/api');
+const ABSOLUTE_BASE = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
+
 const OAuthButtons = () => {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5002/api/auth/google';
+    window.location.href = `${ABSOLUTE_BASE}/auth/google`;
   };
 
   const handleMicrosoftLogin = () => {
-    window.location.href = 'http://localhost:5002/api/auth/microsoft';
+    window.location.href = `${ABSOLUTE_BASE}/auth/microsoft`;
   };
 
   return (

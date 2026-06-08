@@ -382,6 +382,14 @@ const updateApplication = async (req, res) => {
       });
     }
 
+    // Object-level authorization: only the recruiter who owns the job (or admin) may update.
+    if (req.user.role !== 'admin' && (!application.job || application.job.recruiterId !== req.user.id)) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to update this application'
+      });
+    }
+
     // Update status
     application.status = status;
     application.lastUpdated = new Date();
@@ -439,6 +447,14 @@ const scheduleInterview = async (req, res) => {
       return res.status(404).json({
         status: 'error',
         message: 'Application not found'
+      });
+    }
+
+    // Object-level authorization: only the recruiter who owns the job (or admin) may schedule.
+    if (req.user.role !== 'admin' && (!application.job || application.job.recruiterId !== req.user.id)) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to schedule interviews for this application'
       });
     }
 

@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiLock, FiEye, FiEyeOff, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+import authService from '../services/authService';
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -71,18 +69,12 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.put(
-        `${API_URL}/auth/resetpassword/${resetToken}`,
-        { password }
-      );
-
-      if (response.data.status === 'success') {
-        setIsSuccess(true);
-        toast.success('Password reset successful!');
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
-      }
+      await authService.resetPassword(resetToken, password);
+      setIsSuccess(true);
+      toast.success('Password reset successful!');
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to reset password. The link may be invalid or expired.';
       toast.error(errorMsg);

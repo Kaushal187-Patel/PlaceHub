@@ -1,9 +1,19 @@
 const axios = require('axios');
-const User = require('../models/User');
+const { User } = require('../models');
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5002';
+const MAX_HISTORY = 20;
 
-const getCareerSuggestions = async (req, res) => {
+// Append an entry to the user's careerHistory JSONB column (Sequelize), capped.
+const appendCareerHistory = async (userId, entry) => {
+  const user = await User.findByPk(userId, { attributes: ['id', 'careerHistory'] });
+  if (!user) return;
+  const history = Array.isArray(user.careerHistory) ? user.careerHistory : [];
+  const next = [{ ...entry, timestamp: new Date() }, ...history].slice(0, MAX_HISTORY);
+  await user.update({ careerHistory: next });
+};
+
+const getCareerSuggestions = async (req, res, next) => {
   try {
     const { skills, interests, education, experience, goals } = req.body;
     
@@ -17,19 +27,16 @@ const getCareerSuggestions = async (req, res) => {
     };
     
     // Call ML service
-    const response = await axios.post(`${ML_SERVICE_URL}/api/career/recommend`, mlData);
+    const response = await axios.post(`${ML_SERVICE_URL}/api/career/recommend`, mlData, {
+      timeout: 30000
+    });
     
     // Save to user history if user exists
     if (req.user) {
-      await User.findByIdAndUpdate(req.user.id, {
-        $push: {
-          careerHistory: {
-            input: mlData,
-            recommendations: response.data.recommendations,
-            insights: response.data.insights,
-            timestamp: new Date()
-          }
-        }
+      await appendCareerHistory(req.user.id, {
+        input: mlData,
+        recommendations: response.data.recommendations,
+        insights: response.data.insights
       });
     }
     
@@ -39,7 +46,6 @@ const getCareerSuggestions = async (req, res) => {
       insights: response.data.insights
     });
   } catch (error) {
-    console.error('Career suggestions error:', error.message);
     
     // Extract user input for salary calculation
     const userInput = req.body;
@@ -105,33 +111,31 @@ const getCareerSuggestions = async (req, res) => {
     // Save fallback to user history if user is authenticated
     if (req.user) {
       try {
-        await User.findByIdAndUpdate(req.user.id, {
-          $push: {
-            careerHistory: {
-              input: req.body,
-              recommendations: fallbackRecommendations,
-              timestamp: new Date(),
-              fallback: true
-            }
-          }
+        await appendCareerHistory(req.user.id, {
+          input: req.body,
+          recommendations: fallbackRecommendations,
+          fallback: true
         });
       } catch (dbError) {
-        console.error('Failed to save fallback history:', dbError.message);
+        // Non-fatal: history persistence shouldn't block the response.
       }
     }
     
     res.status(200).json({
       status: 'success',
       data: fallbackRecommendations,
+      fallback: true,
       message: 'Using fallback recommendations (ML service unavailable)'
     });
   }
 };
 
-const generateCareerReport = async (req, res) => {
+const generateCareerReport = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
-    const latestRecommendation = user.careerHistory?.[user.careerHistory.length - 1];
+    const user = await User.findByPk(req.user.id, { attributes: ['name', 'email', 'careerHistory'] });
+    const history = Array.isArray(user?.careerHistory) ? user.careerHistory : [];
+    // History is stored most-recent-first.
+    const latestRecommendation = history[0];
     
     if (!latestRecommendation) {
       return res.status(400).json({
@@ -164,47 +168,36 @@ const generateCareerReport = async (req, res) => {
       data: report
     });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to generate career report',
-      error: error.message
-    });
+    next(error);
   }
 };
 
-const getCareerHistory = async (req, res) => {
+const getCareerHistory = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('careerHistory');
+    const user = await User.findByPk(req.user.id, { attributes: ['careerHistory'] });
     
     res.status(200).json({
       status: 'success',
-      data: user.careerHistory || []
+      data: (user && user.careerHistory) || []
     });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to get career history',
-      error: error.message
-    });
+    next(error);
   }
 };
 
-const deleteCareerHistory = async (req, res) => {
+const deleteCareerHistory = async (req, res, next) => {
   try {
-    await User.findByIdAndUpdate(req.user.id, {
-      $unset: { careerHistory: 1 }
-    });
+    await User.update(
+      { careerHistory: [] },
+      { where: { id: req.user.id } }
+    );
     
     res.status(200).json({
       status: 'success',
       message: 'Career history deleted successfully'
     });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to delete career history',
-      error: error.message
-    });
+    next(error);
   }
 };
 

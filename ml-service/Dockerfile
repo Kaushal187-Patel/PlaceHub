@@ -20,11 +20,9 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p models data uploads/resumes
 
-# Train models on container start
-RUN python train_models.py
-
 # Expose port
-EXPOSE 5001
+EXPOSE 5002
 
-# Start the application
-CMD ["python", "app.py"]
+# Serve with a production WSGI server (gunicorn), not the Flask dev server.
+ENV FLASK_ENV=production
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5002", "app:app"]

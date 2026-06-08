@@ -5,16 +5,10 @@ const { Op } = require('sequelize');
 const User = require('../models/User');
 const Resume = require('../models/Resume');
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5002';
 
-const analyzeResume = async (req, res) => {
+const analyzeResume = async (req, res, next) => {
   try {
-    console.log('Request received:', {
-      file: req.file ? req.file.originalname : 'No file',
-      body: req.body,
-      headers: req.headers['content-type']
-    });
-    
     if (!req.file) {
       return res.status(400).json({
         status: 'error',
@@ -31,9 +25,7 @@ const analyzeResume = async (req, res) => {
       contentType: req.file.mimetype
     });
     formData.append('job_role', jobRole);
-    
-    console.log('Calling ML service at:', `${ML_SERVICE_URL}/api/resume/analyze`);
-    
+
     // Call ML service
     const response = await axios.post(`${ML_SERVICE_URL}/api/resume/analyze`, formData, {
       headers: {
@@ -41,10 +33,8 @@ const analyzeResume = async (req, res) => {
       },
       timeout: 60000 // 60 second timeout for better processing
     });
-    
-    console.log('ML service response received:', response.status);
-    
-    // Save resume and analysis to database BEFORE cleaning up file
+
+    // Save resume and analysis to database (file is retained for authenticated download)
     let savedResume = null;
     if (req.user) {
       // Mark all previous resumes as not latest (Sequelize)
@@ -81,12 +71,10 @@ const analyzeResume = async (req, res) => {
         }
       }, { where: { id: req.user.id } });
     }
-    
-    // Clean up uploaded file after saving to database
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-    
+
+    // Note: the uploaded file is intentionally retained so the owner can
+    // download it later via the authenticated downloadResume endpoint.
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -96,20 +84,20 @@ const analyzeResume = async (req, res) => {
       },
       message: 'Resume analysis completed successfully'
     });
-    
+
   } catch (error) {
-    console.error('Resume analysis error:', error.message);
-    
-    // Clean up uploaded file on error
+    // Clean up uploaded file on error (it was never persisted to a Resume row)
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try { fs.unlinkSync(req.file.path); } catch (_) { /* best effort */ }
     }
-    
-    res.status(500).json({
-      status: 'error',
-      message: 'Resume analysis failed. Please ensure ML service is running and try again.',
-      error: error.message
-    });
+
+    if (error.response || error.code === 'ECONNABORTED' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        status: 'error',
+        message: 'Resume analysis service is currently unavailable. Please try again later.'
+      });
+    }
+    next(error);
   }
 };
 
@@ -149,11 +137,17 @@ const getLatestResume = async (req, res) => {
   }
 };
 
-const downloadResume = async (req, res) => {
+const downloadResume = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const resume = await Resume.findByPk(id);
-    
+
+    // Object-level authorization: only the owner (or an admin) may download.
+    const where = { id };
+    if (req.user.role !== 'admin') {
+      where.userId = req.user.id;
+    }
+    const resume = await Resume.findOne({ where });
+
     if (!resume) {
       return res.status(404).json({
         status: 'error',
@@ -162,27 +156,27 @@ const downloadResume = async (req, res) => {
     }
 
     // Check if file exists
-    if (!fs.existsSync(resume.filePath)) {
+    if (!resume.filePath || !fs.existsSync(resume.filePath)) {
       return res.status(404).json({
         status: 'error',
         message: 'Resume file not found on server'
       });
     }
 
-    // Set headers for file download
-    res.setHeader('Content-Type', resume.mimeType || 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${resume.originalName}"`);
-    
-    // Stream the file
+    // Sanitize the filename to prevent header/response-splitting injection.
+    const safeName = String(resume.originalName || 'resume')
+      .replace(/[\r\n"]/g, '')
+      .replace(/[^\w.\- ]/g, '_')
+      .slice(0, 200);
+
+    res.setHeader('Content-Type', resume.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+
     const fileStream = fs.createReadStream(resume.filePath);
+    fileStream.on('error', next);
     fileStream.pipe(res);
   } catch (error) {
-    console.error('Download resume error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to download resume',
-      error: error.message
-    });
+    next(error);
   }
 };
 

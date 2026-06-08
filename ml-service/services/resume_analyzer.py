@@ -3,6 +3,7 @@ import docx
 import re
 import io
 from collections import Counter
+from datetime import datetime
 
 class ResumeAnalyzer:
     def __init__(self):
@@ -171,7 +172,7 @@ class ResumeAnalyzer:
     
     def _calculate_total_experience(self, date_ranges):
         total_years = 0
-        current_year = 2024
+        current_year = datetime.now().year
         
         for start_date, end_date in date_ranges:
             try:

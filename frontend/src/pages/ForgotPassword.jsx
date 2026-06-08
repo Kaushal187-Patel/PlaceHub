@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiMail, FiArrowLeft } from 'react-icons/fi';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+import authService from '../services/authService';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -22,12 +20,9 @@ const ForgotPassword = () => {
     setIsLoading(true);
     
     try {
-      const response = await axios.post(`${API_URL}/auth/forgotpassword`, { email });
-      
-      if (response.data.status === 'success') {
-        setIsSubmitted(true);
-        toast.success(response.data.message);
-      }
+      const data = await authService.forgotPassword(email);
+      setIsSubmitted(true);
+      toast.success(data.message || 'If an account with that email exists, a reset link has been sent.');
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to send reset link. Please try again.';
       toast.error(errorMsg);

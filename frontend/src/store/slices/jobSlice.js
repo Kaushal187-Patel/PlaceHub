@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import jobService from '../../services/jobService';
+import userService from '../../services/userService';
+import applicationService from '../../services/applicationService';
 
 const initialState = {
   jobs: [],
@@ -19,7 +21,7 @@ export const getJobs = createAsyncThunk(
   'jobs/getAll',
   async (params, thunkAPI) => {
     try {
-      return await jobService.getJobs(params);
+      return await jobService.getAllJobs(params);
     } catch (error) {
       const message = error.response?.data?.message || error.message;
       return thunkAPI.rejectWithValue(message);
@@ -27,12 +29,14 @@ export const getJobs = createAsyncThunk(
   }
 );
 
-// Get single job
+// Get single job (no dedicated detail endpoint; resolve from the list)
 export const getJob = createAsyncThunk(
   'jobs/getOne',
   async (id, thunkAPI) => {
     try {
-      return await jobService.getJob(id);
+      const result = await jobService.getAllJobs();
+      const jobs = result.jobs || result.data || [];
+      return jobs.find((j) => j.id === id || j._id === id) || null;
     } catch (error) {
       const message = error.response?.data?.message || error.message;
       return thunkAPI.rejectWithValue(message);
@@ -45,8 +49,7 @@ export const applyForJob = createAsyncThunk(
   'jobs/apply',
   async ({ jobId, applicationData }, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await jobService.applyForJob(jobId, applicationData, token);
+      return await applicationService.applyForJob(jobId, applicationData);
     } catch (error) {
       const message = error.response?.data?.message || error.message;
       return thunkAPI.rejectWithValue(message);
@@ -59,8 +62,7 @@ export const saveJob = createAsyncThunk(
   'jobs/save',
   async (jobId, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await jobService.saveJob(jobId, token);
+      return await userService.saveJob(jobId);
     } catch (error) {
       const message = error.response?.data?.message || error.message;
       return thunkAPI.rejectWithValue(message);

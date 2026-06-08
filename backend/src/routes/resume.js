@@ -9,15 +9,16 @@ const {
 
 const { protect, authorize } = require('../middleware/auth');
 const { uploadResume } = require('../middleware/upload');
+const { uploadLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-// Resume routes - temporarily remove auth for testing
-router.route('/analyze')
-  .post(uploadResume.single('resume'), analyzeResume);
-
-// Protected routes
+// All resume routes require authentication.
 router.use(protect);
+
+// Resume analysis (rate-limited file upload + ML call)
+router.route('/analyze')
+  .post(uploadLimiter, uploadResume.single('resume'), analyzeResume);
 
 router.route('/latest')
   .get(getLatestResume);

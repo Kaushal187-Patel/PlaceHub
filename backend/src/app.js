@@ -45,7 +45,7 @@ const limiter = rateLimit({
   skip: (req) =>
     req.method === 'OPTIONS' ||
     req.path === '/health' ||
-    req.path === '/jobs',
+    req.originalUrl.startsWith('/api/jobs'),
   message: {
     status: 'error',
     message: 'Too many requests from this IP, please try again later.'
@@ -83,11 +83,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Passport middleware
 app.use(passport.initialize());
 
-// Static files
-app.use('/uploads', express.static('uploads'));
-
-// Handle preflight requests
-app.options('*', cors());
+// NOTE: The ./uploads directory is intentionally NOT served as public static
+// content. It contains user resumes (PII). Files are delivered only through the
+// authenticated, ownership-checked GET /api/resume/:id download endpoint.
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -121,6 +121,10 @@ const Job = sequelize.define('Job', {
       fields: ['location', 'type', 'status']
     },
     {
+      // Recruiter "my jobs" listings filter by owner.
+      fields: ['recruiter_id']
+    },
+    {
       fields: ['title'],
       using: 'gin',
       operator: 'gin_trgm_ops' // For full-text search (requires pg_trgm extension)

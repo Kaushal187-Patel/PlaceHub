@@ -90,6 +90,10 @@ const User = sequelize.define('User', {
     type: DataTypes.JSONB,
     allowNull: true
   },
+  careerHistory: {
+    type: DataTypes.JSONB,
+    defaultValue: []
+  },
   isEmailVerified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
@@ -132,7 +136,11 @@ const User = sequelize.define('User', {
 
 // Instance methods
 User.prototype.getSignedJwtToken = function() {
-  return jwt.sign({ id: this.id }, process.env.JWT_SECRET || 'fallback_secret', {
+  if (!process.env.JWT_SECRET) {
+    // Never sign tokens with a hardcoded fallback secret.
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return jwt.sign({ id: this.id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d'
   });
 };

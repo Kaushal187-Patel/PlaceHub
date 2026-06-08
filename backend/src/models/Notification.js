@@ -54,7 +54,12 @@ const Notification = sequelize.define('Notification', {
     allowNull: true
   }
 }, {
-  tableName: 'notifications'
+  tableName: 'notifications',
+  indexes: [
+    // Listing a user's notifications, newest first, optionally filtered by status.
+    { fields: ['user_id', 'status'] },
+    { fields: ['application_id'] }
+  ]
 });
 
 module.exports = Notification;

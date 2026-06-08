@@ -35,7 +35,13 @@ const Message = sequelize.define('Message', {
     field: 'read_at'
   }
 }, {
-  tableName: 'messages'
+  tableName: 'messages',
+  indexes: [
+    // Fetching a conversation's messages in chronological order.
+    { fields: ['conversation_id', 'created_at'] },
+    // Unread-count lookups per conversation.
+    { fields: ['conversation_id', 'read_at'] }
+  ]
 });
 
 module.exports = Message;

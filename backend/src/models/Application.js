@@ -81,7 +81,11 @@ const Application = sequelize.define('Application', {
     {
       unique: true,
       fields: ['user_id', 'job_id']
-    }
+    },
+    // Recruiter dashboards filter applications by job and status.
+    { fields: ['job_id'] },
+    { fields: ['user_id'] },
+    { fields: ['status'] }
   ],
   hooks: {
     beforeUpdate: (application) => {

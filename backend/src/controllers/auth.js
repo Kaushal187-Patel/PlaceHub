@@ -39,12 +39,7 @@ const register = async (req, res, next) => {
 
     sendTokenResponse(user, 201, res, 'User registered successfully');
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Registration failed',
-      error: error.message
-    });
+    next(error);
   }
 };
 
@@ -112,12 +107,7 @@ const login = async (req, res, next) => {
 
     sendTokenResponse(user, 200, res, 'Login successful');
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Login failed',
-      error: error.message
-    });
+    next(error);
   }
 };
 
@@ -255,13 +245,16 @@ const forgotPassword = async (req, res, next) => {
       });
     }
 
+    // Generic response used whether or not the email exists (prevents account enumeration).
+    const genericResponse = {
+      status: 'success',
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    };
+
     const user = await User.findOne({ where: { email: req.body.email } });
 
     if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'There is no user with that email'
-      });
+      return res.status(200).json(genericResponse);
     }
 
     // Get reset token
@@ -313,13 +306,6 @@ const forgotPassword = async (req, res, next) => {
     `;
 
     try {
-      console.log('Attempting to send email to:', user.email);
-      console.log('SMTP Config:', {
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
-        user: process.env.EMAIL_USER
-      });
-      
       await sendEmail({
         email: user.email,
         subject: 'PlaceHub - Password Reset Request',
@@ -327,24 +313,14 @@ const forgotPassword = async (req, res, next) => {
         html
       });
 
-      console.log('Email sent successfully');
-      res.status(200).json({
-        status: 'success',
-        message: 'Password reset link sent to your email'
-      });
+      res.status(200).json(genericResponse);
     } catch (err) {
-      console.error('Email sending error:', err);
-      console.error('Error details:', err.message);
       user.resetPasswordToken = null;
       user.resetPasswordExpire = null;
 
       await user.save();
 
-      return res.status(500).json({
-        status: 'error',
-        message: 'Email could not be sent',
-        error: err.message
-      });
+      return next(err);
     }
   } catch (error) {
     next(error);

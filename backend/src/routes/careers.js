@@ -10,12 +10,11 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Career routes - temporarily remove auth for testing
+// All career routes require authentication.
+router.use(protect);
+
 router.route('/suggestions')
   .post(getCareerSuggestions);
-
-// Protected routes
-router.use(protect);
 
 router.route('/report')
   .post(generateCareerReport);

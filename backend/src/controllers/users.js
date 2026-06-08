@@ -370,7 +370,7 @@ const getAppliedJobs = async (req, res) => {
 // @desc    Update user (Admin only)
 // @route   PUT /api/users/:id
 // @access  Private/Admin
-const updateUser = async (req, res) => {
+const updateUser = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id);
     
@@ -380,8 +380,18 @@ const updateUser = async (req, res) => {
         message: 'User not found'
       });
     }
-    
-    await user.update(req.body);
+
+    // Whitelist admin-updatable fields. Never allow raw password, reset tokens,
+    // or other sensitive columns to be mass-assigned from the request body.
+    const allowedFields = ['name', 'email', 'role', 'isActive', 'phone', 'location', 'isEmailVerified'];
+    const updateData = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+
+    await user.update(updateData);
     await user.reload({ attributes: { exclude: ['password'] } });
     
     res.status(200).json({
@@ -390,11 +400,7 @@ const updateUser = async (req, res) => {
       data: user
     });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to update user',
-      error: error.message
-    });
+    next(error);
   }
 };
 

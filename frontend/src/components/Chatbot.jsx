@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { FiMessageCircle, FiSend, FiTrash2, FiX } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import chatbotService from "../services/chatbotService";
+import { formatMessage } from "../utils/formatMessage";
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -105,15 +106,6 @@ const Chatbot = () => {
       e.preventDefault();
       sendMessage();
     }
-  };
-
-  const formatMessage = (text) => {
-    // Convert markdown-like formatting to HTML
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/\n/g, "<br>")
-      .replace(/•/g, "•");
   };
 
   if (!user) return null;

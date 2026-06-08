@@ -1,44 +1,59 @@
+const logger = require('../utils/logger');
+
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
+  let error = { message: err.message, statusCode: err.statusCode };
 
-  // Log error
-  console.error(err);
+  // Log error with structured logger (avoids noisy console + enables redaction)
+  logger.error(`${req.method} ${req.originalUrl} - ${err.message}`, {
+    stack: err.stack,
+    name: err.name
+  });
 
-  // Mongoose bad ObjectId
-  if (err.name === 'CastError') {
-    const message = 'Resource not found';
-    error = { message, statusCode: 404 };
+  // Sequelize unique constraint (e.g. duplicate email)
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    const field = err.errors && err.errors[0] ? err.errors[0].path : 'field';
+    error = { message: `Duplicate value for ${field}`, statusCode: 400 };
   }
 
-  // Mongoose duplicate key
-  if (err.code === 11000) {
-    const message = 'Duplicate field value entered';
+  // Sequelize validation error
+  if (err.name === 'SequelizeValidationError') {
+    const message = (err.errors || []).map(e => e.message).join(', ') || 'Validation error';
     error = { message, statusCode: 400 };
   }
 
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map(val => val.message).join(', ');
-    error = { message, statusCode: 400 };
+  // Sequelize foreign key violation
+  if (err.name === 'SequelizeForeignKeyConstraintError') {
+    error = { message: 'Related resource not found or still referenced', statusCode: 409 };
   }
 
-  // JWT error
+  // Sequelize DB connection error
+  if (err.name === 'SequelizeConnectionError' || err.name === 'SequelizeConnectionRefusedError') {
+    error = { message: 'Database temporarily unavailable', statusCode: 503 };
+  }
+
+  // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
-    error = { message, statusCode: 401 };
+    error = { message: 'Invalid token', statusCode: 401 };
   }
-
-  // JWT expired error
   if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = { message, statusCode: 401 };
+    error = { message: 'Token expired', statusCode: 401 };
   }
 
-  res.status(error.statusCode || 500).json({
+  // Multer file upload errors
+  if (err.name === 'MulterError') {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large' : 'File upload error';
+    error = { message, statusCode: 400 };
+  }
+
+  const statusCode = error.statusCode || 500;
+  // In production, never leak internal error details for 5xx responses.
+  const isProd = process.env.NODE_ENV === 'production';
+  const message = (isProd && statusCode >= 500) ? 'Server Error' : (error.message || 'Server Error');
+
+  res.status(statusCode).json({
     status: 'error',
-    message: error.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message,
+    ...(!isProd && { stack: err.stack })
   });
 };
 

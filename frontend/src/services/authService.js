@@ -10,7 +10,6 @@ const register = async (userData) => {
       role: response.data.data.user.role,
       token: response.data.data.token
     };
-    console.log('Register - storing user with role:', user.role);
     localStorage.setItem('user', JSON.stringify(user));
     return user;
   }
@@ -28,13 +27,11 @@ const login = async (userData) => {
         role: response.data.data.user.role,
         token: response.data.data.token
       };
-      console.log('Login - storing user with role:', user.role);
       localStorage.setItem('user', JSON.stringify(user));
       return user;
     }
     return response.data;
   } catch (error) {
-    console.error('Login service error:', error.response?.data);
     throw error;
   }
 };
@@ -43,13 +40,14 @@ const logout = () => {
   localStorage.removeItem('user');
 };
 
+// NOTE: backend routes are /auth/forgotpassword and /auth/resetpassword/:resettoken (no hyphens).
 const forgotPassword = async (email) => {
-  const response = await api.post('/auth/forgot-password', { email });
+  const response = await api.post('/auth/forgotpassword', { email });
   return response.data;
 };
 
 const resetPassword = async (token, password) => {
-  const response = await api.put(`/auth/reset-password/${token}`, { password });
+  const response = await api.put(`/auth/resetpassword/${token}`, { password });
   return response.data;
 };
 
